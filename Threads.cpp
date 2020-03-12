@@ -742,16 +742,31 @@ namespace samediff {
 		//we need it in case our ((stop-start) % increment ) > 0
 		thread_spans[numThreads - 1].start = begin;
 		thread_spans[numThreads - 1].end = stop;
- 
+#if 1
+		nd4j_printf("use#1 %d free %d\n", numThreads, _nFreeThreads);
+#endif
 		if (tryAcquire(numThreads)) {
+#if 1
+			nd4j_printf("use#2 %d free %d\n", numThreads, _nFreeThreads);
+#endif
+#if 1
 #pragma omp parallel for
+#else
+#pragma _NEC parallel
+#endif
 			for (size_t j = 0; j < numThreads; j++) {
+#if 1
+				nd4j_printf("use#inner span %ld   %ld\n", thread_spans[j].start, thread_spans[j].end);
+#endif
 				function(j, thread_spans[j].start, thread_spans[j].end, increment);
 			}
 			freeThreads(numThreads);
 			return numThreads;
 		}
 		else {
+#if 1
+			nd4j_printf("use#3 %d free %d\n", 1, _nFreeThreads);
+#endif
 			function(0, start, stop, increment);
 			// we tell that parallelism request declined
 			return 1;
