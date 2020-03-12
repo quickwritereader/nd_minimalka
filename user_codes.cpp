@@ -415,8 +415,15 @@ template <typename T1, typename T2, typename T3>
         batch_len *= bases[i];
     }
     auto func = [vA, vB, vC,   alpha, beta](uint64_t thread_id, int64_t start, int64_t stop, int64_t increment) -> void {
-
+#if 1
+        auto timeStart = std::chrono::system_clock::now(); 
+#endif
         parallel_batchedGemm3<T1, T2, T3>(vA, vB, vC, alpha, beta, start, stop);
+#if 1
+        auto timeEnd = std::chrono::system_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds> (timeEnd - timeStart).count();
+        nd4j_printf("inner-time:: %lli\n", elapsed_time);
+#endif
     };
 
     // samediff::Threads::parallel_tad(func, 0, batch_len);
