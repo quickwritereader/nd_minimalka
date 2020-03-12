@@ -392,7 +392,20 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
 
 }
 
-
+template <typename T1, typename T2, typename T3>
+void ff(uint64_t uui, int64_t start, int64_t stop, int64_t increment, const NDArray* vA, const NDArray* vB, NDArray* vC,
+    const T1 alpha, const T3 beta) {
+ #if 0
+        auto timeStart = std::chrono::system_clock::now();
+#endif
+        parallel_batchedGemm3<T1, T2, T3>(vA, vB, vC, alpha, beta, start, stop);
+#if 0
+        auto timeEnd = std::chrono::system_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds> (timeEnd - timeStart).count();
+        nd4j_printf("inner-time:: %lli\n", elapsed_time);
+#endif
+ 
+}
 
 template <typename T1, typename T2, typename T3>
  void batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,  
@@ -414,12 +427,20 @@ template <typename T1, typename T2, typename T3>
     for (int i = 0; i < max_rank - 2; i++) {
         batch_len *= bases[i];
     }
-    auto func = [vA, vB, vC,   alpha, beta](uint64_t thread_id, int64_t start, int64_t stop, int64_t increment) -> void {
+
 #if 1
+
+    // samediff::Threads::parallel_tad(func, 0, batch_len);
+    samediff::Threads::parallel_aligned_increment2(ff<T1,T2,T3>, 0, batch_len, 1,vA,vB,vC,alpha,beta);
+
+#else
+
+    auto func = [vA, vB, vC,   alpha, beta](uint64_t thread_id, int64_t start, int64_t stop, int64_t increment) -> void {
+#if 0
         auto timeStart = std::chrono::system_clock::now(); 
 #endif
         parallel_batchedGemm3<T1, T2, T3>(vA, vB, vC, alpha, beta, start, stop);
-#if 1
+#if 0
         auto timeEnd = std::chrono::system_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds> (timeEnd - timeStart).count();
         nd4j_printf("inner-time:: %lli\n", elapsed_time);
@@ -428,10 +449,12 @@ template <typename T1, typename T2, typename T3>
 
     // samediff::Threads::parallel_tad(func, 0, batch_len);
     samediff::Threads::parallel_aligned_increment(func, 0, batch_len, 1, false);
+
+#endif
 }
 
  template void batchedGemm3<float, float, float>(const NDArray* vA, const NDArray* vB, NDArray* vC,  const float alpha, const float beta, char out_order);
-
+ template void   ff<float, float, float>(uint64_t uui, int64_t start, int64_t stop, int64_t increment, const NDArray* vA, const NDArray* vB, NDArray* vC,  float alpha,   float beta);
  //usualgemm from nd
 
  template <typename T1, typename T2, typename T3>
