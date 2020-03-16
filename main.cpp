@@ -112,6 +112,7 @@ int test() {
 
 
 #endif
+			check_eq<float>(c_actual,c_ref);
 			 delete ptr_c_mn;
 
 

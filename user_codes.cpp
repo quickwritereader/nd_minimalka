@@ -10,10 +10,10 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
 #endif
 
     // Nd4jLong aStride_Mx2 = aStride_M *2;
-    if (aStride_K == 1 && bStride_N == 1) {
+    if ( aStride_K == 1 && bStride_N == 1) {
 
-        Nd4jLong M_L = M & -8;;
-        Nd4jLong K_L = K & -8;
+        Nd4jLong M_L =   M & -8;;
+        Nd4jLong K_L = K & -8;// 8;
 
         for (Nd4jLong k = 0; k < K_L; k += 8) {
 
@@ -29,84 +29,199 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
             for (Nd4jLong m = 0; m < M_L; m += 8) {
                 Nd4jLong OFF_A = m * aStride_M;
                 T1 AA0 = alpha * AA[OFF_A];
+                T1 AA1 = alpha * AA[OFF_A + aStride_M];
+                T1 AA2 = alpha * AA[OFF_A + 2 * aStride_M];
+                T1 AA3 = alpha * AA[OFF_A + 3 * aStride_M];
+                T1 AA4 = alpha * AA[OFF_A + 4 * aStride_M];
+                T1 AA5 = alpha * AA[OFF_A + 5 * aStride_M];
+                T1 AA6 = alpha * AA[OFF_A + 6 * aStride_M];
+                T1 AA7 = alpha * AA[OFF_A + 7 * aStride_M];
+
                 T1 AA0_1 = alpha * AA[OFF_A + 1];
-                T1 AA0_2 = alpha * AA[OFF_A + 2 * 1];
-                T1 AA0_3 = alpha * AA[OFF_A + 3 * 1];
+                T1 AA1_1 = alpha * AA[OFF_A + aStride_M + 1];
+                T1 AA2_1 = alpha * AA[OFF_A + 2 * aStride_M + 1];
+                T1 AA3_1 = alpha * AA[OFF_A + 3 * aStride_M + 1];
+                T1 AA4_1 = alpha * AA[OFF_A + 4 * aStride_M + 1];
+                T1 AA5_1 = alpha * AA[OFF_A + 5 * aStride_M + 1];
+                T1 AA6_1 = alpha * AA[OFF_A + 6 * aStride_M + 1];
+                T1 AA7_1 = alpha * AA[OFF_A + 7 * aStride_M + 1];
+
+                T1 AA0_2 = alpha * AA[OFF_A + 2];
+                T1 AA1_2 = alpha * AA[OFF_A + aStride_M + 2];
+                T1 AA2_2 = alpha * AA[OFF_A + 2 * aStride_M + 2];
+                T1 AA3_2 = alpha * AA[OFF_A + 3 * aStride_M + 2];
+                T1 AA4_2 = alpha * AA[OFF_A + 4 * aStride_M + 2];
+                T1 AA5_2 = alpha * AA[OFF_A + 5 * aStride_M + 2];
+                T1 AA6_2 = alpha * AA[OFF_A + 6 * aStride_M + 2];
+                T1 AA7_2 = alpha * AA[OFF_A + 7 * aStride_M + 2];
+
+                T1 AA0_3 = alpha * AA[OFF_A + 3];
+                T1 AA1_3 = alpha * AA[OFF_A + aStride_M + 3];
+                T1 AA2_3 = alpha * AA[OFF_A + 2 * aStride_M + 3];
+                T1 AA3_3 = alpha * AA[OFF_A + 3 * aStride_M + 3];
+                T1 AA4_3 = alpha * AA[OFF_A + 4 * aStride_M + 3];
+                T1 AA5_3 = alpha * AA[OFF_A + 5 * aStride_M + 3];
+                T1 AA6_3 = alpha * AA[OFF_A + 6 * aStride_M + 3];
+                T1 AA7_3 = alpha * AA[OFF_A + 7 * aStride_M + 3];
 
                 T1 AA0_4 = alpha * AA[OFF_A + 4];
-                T1 AA0_4_1 = alpha * AA[OFF_A + 1 + 4];
-                T1 AA0_4_2 = alpha * AA[OFF_A + 2 * 1 + 4];
-                T1 AA0_4_3 = alpha * AA[OFF_A + 3 * 1 + 4];
-
-                T1 AA1 = alpha * AA[OFF_A + aStride_M];
-                T1 AA1_1 = alpha * AA[OFF_A + aStride_M + 1];
-                T1 AA1_2 = alpha * AA[OFF_A + aStride_M + 2 * 1];
-                T1 AA1_3 = alpha * AA[OFF_A + aStride_M + 3 * 1];
-
                 T1 AA1_4 = alpha * AA[OFF_A + aStride_M + 4];
-                T1 AA1_4_1 = alpha * AA[OFF_A + aStride_M + 1 + 4];
-                T1 AA1_4_2 = alpha * AA[OFF_A + aStride_M + 2 * 1 + 4];
-                T1 AA1_4_3 = alpha * AA[OFF_A + aStride_M + 3 * 1 + 4];
-
-                T1 AA2 = alpha * AA[OFF_A + 2 * aStride_M];
-                T1 AA2_1 = alpha * AA[OFF_A + 2 * aStride_M + 1];
-                T1 AA2_2 = alpha * AA[OFF_A + 2 * aStride_M + 2 * 1];
-                T1 AA2_3 = alpha * AA[OFF_A + 2 * aStride_M + 3 * 1];
-
                 T1 AA2_4 = alpha * AA[OFF_A + 2 * aStride_M + 4];
-                T1 AA2_4_1 = alpha * AA[OFF_A + 2 * aStride_M + 1 + 4];
-                T1 AA2_4_2 = alpha * AA[OFF_A + 2 * aStride_M + 2 * 1 + 4];
-                T1 AA2_4_3 = alpha * AA[OFF_A + 2 * aStride_M + 3 * 1 + 4];
-
-                T1 AA3 = alpha * AA[OFF_A + 3 * aStride_M];
-                T1 AA3_1 = alpha * AA[OFF_A + 3 * aStride_M + 1];
-                T1 AA3_2 = alpha * AA[OFF_A + 3 * aStride_M + 2 * 1];
-                T1 AA3_3 = alpha * AA[m * aStride_M + 3 * aStride_M + 3 * 1];
-
-                T1 AA3_4 = alpha * AA[m * aStride_M + 3 * aStride_M + 4];
-                T1 AA3_4_1 = alpha * AA[m * aStride_M + 3 * aStride_M + 1 + 4];
-                T1 AA3_4_2 = alpha * AA[m * aStride_M + 3 * aStride_M + 2 * 1 + 4];
-                T1 AA3_4_3 = alpha * AA[m * aStride_M + 3 * aStride_M + 3 * 1 + 4];
-
-                T1 AA4 = alpha * AA[OFF_A + 4 * aStride_M];
-                T1 AA4_1 = alpha * AA[OFF_A + 4 * aStride_M + 1];
-                T1 AA4_2 = alpha * AA[OFF_A + 4 * aStride_M + 2 * 1];
-                T1 AA4_3 = alpha * AA[OFF_A + 4 * aStride_M + 3 * 1];
-
+                T1 AA3_4 = alpha * AA[OFF_A + 3 * aStride_M + 4];
                 T1 AA4_4 = alpha * AA[OFF_A + 4 * aStride_M + 4];
-                T1 AA4_4_1 = alpha * AA[OFF_A + 4 * aStride_M + 1 + 4];
-                T1 AA4_4_2 = alpha * AA[OFF_A + 4 * aStride_M + 2 * 1 + 4];
-                T1 AA4_4_3 = alpha * AA[OFF_A + 4 * aStride_M + 3 * 1 + 4];
-
-                T1 AA5 = alpha * AA[OFF_A + 5 * aStride_M];
-                T1 AA5_1 = alpha * AA[OFF_A + 5 * aStride_M + 1];
-                T1 AA5_2 = alpha * AA[OFF_A + 5 * aStride_M + 2 * 1];
-                T1 AA5_3 = alpha * AA[OFF_A + 5 * aStride_M + 3 * 1];
-
                 T1 AA5_4 = alpha * AA[OFF_A + 5 * aStride_M + 4];
-                T1 AA5_4_1 = alpha * AA[OFF_A + 5 * aStride_M + 1 + 4];
-                T1 AA5_4_2 = alpha * AA[OFF_A + 5 * aStride_M + 2 * 1 + 4];
-                T1 AA5_4_3 = alpha * AA[OFF_A + 5 * aStride_M + 3 * 1 + 4];
-
-                T1 AA6 = alpha * AA[OFF_A + 6 * aStride_M];
-                T1 AA6_1 = alpha * AA[OFF_A + 6 * aStride_M + 1];
-                T1 AA6_2 = alpha * AA[OFF_A + 6 * aStride_M + 2 * 1];
-                T1 AA6_3 = alpha * AA[OFF_A + 6 * aStride_M + 3 * 1];
-
                 T1 AA6_4 = alpha * AA[OFF_A + 6 * aStride_M + 4];
-                T1 AA6_4_1 = alpha * AA[OFF_A + 6 * aStride_M + 1 + 4];
-                T1 AA6_4_2 = alpha * AA[OFF_A + 6 * aStride_M + 2 * 1 + 4];
-                T1 AA6_4_3 = alpha * AA[OFF_A + 6 * aStride_M + 3 * 1 + 4];
-
-                T1 AA7 = alpha * AA[OFF_A + 7 * aStride_M];
-                T1 AA7_1 = alpha * AA[OFF_A + 7 * aStride_M + 1];
-                T1 AA7_2 = alpha * AA[OFF_A + 7 * aStride_M + 2 * 1];
-                T1 AA7_3 = alpha * AA[OFF_A + 7 * aStride_M + 3 * 1];
-
                 T1 AA7_4 = alpha * AA[OFF_A + 7 * aStride_M + 4];
-                T1 AA7_4_1 = alpha * AA[OFF_A + 7 * aStride_M + 1 + 4];
-                T1 AA7_4_2 = alpha * AA[OFF_A + 7 * aStride_M + 2 * 1 + 4];
-                T1 AA7_4_3 = alpha * AA[OFF_A + 7 * aStride_M + 3 * 1 + 4];
+
+
+                T1 AA0_5 = alpha * AA[OFF_A + 5];
+                T1 AA1_5 = alpha * AA[OFF_A + aStride_M + 5];
+                T1 AA2_5 = alpha * AA[OFF_A + 2 * aStride_M + 5];
+                T1 AA3_5 = alpha * AA[OFF_A + 3 * aStride_M + 5];
+                T1 AA4_5 = alpha * AA[OFF_A + 4 * aStride_M + 5];
+                T1 AA5_5 = alpha * AA[OFF_A + 5 * aStride_M + 5];
+                T1 AA6_5 = alpha * AA[OFF_A + 6 * aStride_M + 5];
+                T1 AA7_5 = alpha * AA[OFF_A + 7 * aStride_M + 5];
+
+                T1 AA0_6 = alpha * AA[OFF_A + 6];
+                T1 AA1_6 = alpha * AA[OFF_A + aStride_M + 6];
+                T1 AA2_6 = alpha * AA[OFF_A + 2 * aStride_M + 6];
+                T1 AA3_6 = alpha * AA[OFF_A + 3 * aStride_M + 6];
+                T1 AA4_6 = alpha * AA[OFF_A + 4 * aStride_M + 6];
+                T1 AA5_6 = alpha * AA[OFF_A + 5 * aStride_M + 6];
+                T1 AA6_6 = alpha * AA[OFF_A + 6 * aStride_M + 6];
+                T1 AA7_6 = alpha * AA[OFF_A + 7 * aStride_M + 6];
+
+
+                T1 AA0_7 = alpha * AA[OFF_A + 7];
+                T1 AA1_7 = alpha * AA[OFF_A + aStride_M + 7];
+                T1 AA2_7 = alpha * AA[OFF_A + 2 * aStride_M + 7];
+                T1 AA3_7 = alpha * AA[OFF_A + 3 * aStride_M + 7];
+                T1 AA4_7 = alpha * AA[OFF_A + 4 * aStride_M + 7];
+                T1 AA5_7 = alpha * AA[OFF_A + 5 * aStride_M + 7];
+                T1 AA6_7 = alpha * AA[OFF_A + 6 * aStride_M + 7];
+                T1 AA7_7 = alpha * AA[OFF_A + 7 * aStride_M + 7];
+
+                T3* __restrict CC0 = &(C[m * cStride_M]);
+                T3* __restrict CC1 = &(C[m * cStride_M + cStride_M]);
+                T3* __restrict CC2 = &(C[m * cStride_M + 2 * cStride_M]);
+                T3* __restrict CC3 = &(C[m * cStride_M + 3 * cStride_M]);
+
+                T3* __restrict CC4 = &(C[m * cStride_M + 4 * cStride_M]);
+                T3* __restrict CC5 = &(C[m * cStride_M + 5 * cStride_M]);
+                T3* __restrict CC6 = &(C[m * cStride_M + 6 * cStride_M]);
+                T3* __restrict CC7 = &(C[m * cStride_M + 7 * cStride_M]);
+
+                PRAGMA_OMP_SIMD
+                for (Nd4jLong n = 0; n < N; n++) {
+                        //  nd4j_printf("%p %lf %lf %lf \n", &(CC[n]),CC[n], AA0, BB[n]);
+                        CC0[n] += AA0 * BB0[n];
+                        CC1[n] += AA1 * BB0[n];
+                        CC2[n] += AA2 * BB0[n];
+                        CC3[n] += AA3 * BB0[n];
+                        CC4[n] += AA4 * BB0[n];
+                        CC5[n] += AA5 * BB0[n];
+                        CC6[n] += AA6 * BB0[n];
+                        CC7[n] += AA7 * BB0[n];
+
+                        CC0[n] += AA0_1 * BB1[n];
+                        CC1[n] += AA1_1 * BB1[n];
+                        CC2[n] += AA2_1 * BB1[n];
+                        CC3[n] += AA3_1 * BB1[n];
+                        CC4[n] += AA4_1 * BB1[n];
+                        CC5[n] += AA5_1 * BB1[n];
+                        CC6[n] += AA6_1 * BB1[n];
+                        CC7[n] += AA7_1 * BB1[n];
+
+                        CC0[n] += AA0_2 * BB2[n];
+                        CC1[n] += AA1_2 * BB2[n];
+                        CC2[n] += AA2_2 * BB2[n];
+                        CC3[n] += AA3_2 * BB2[n];
+                        CC4[n] += AA4_2 * BB2[n];
+                        CC5[n] += AA5_2 * BB2[n];
+                        CC6[n] += AA6_2 * BB2[n];
+                        CC7[n] += AA7_2 * BB2[n];
+
+                        CC0[n] += AA0_3 * BB3[n];
+                        CC1[n] += AA1_3 * BB3[n];
+                        CC2[n] += AA2_3 * BB3[n];
+                        CC3[n] += AA3_3 * BB3[n];
+                        CC4[n] += AA4_3 * BB3[n];
+                        CC5[n] += AA5_3 * BB3[n];
+                        CC6[n] += AA6_3 * BB3[n];
+                        CC7[n] += AA7_3 * BB3[n];
+
+                        CC0[n] += AA0_4 * BB4[n];
+                        CC1[n] += AA1_4 * BB4[n];
+                        CC2[n] += AA2_4 * BB4[n];
+                        CC3[n] += AA3_4 * BB4[n];
+                        CC4[n] += AA4_4 * BB4[n];
+                        CC5[n] += AA5_4 * BB4[n];
+                        CC6[n] += AA6_4 * BB4[n];
+                        CC7[n] += AA7_4 * BB4[n];
+
+
+                        CC0[n] += AA0_5 * BB5[n];
+                        CC1[n] += AA1_5 * BB5[n];
+                        CC2[n] += AA2_5 * BB5[n];
+                        CC3[n] += AA3_5 * BB5[n];
+                        CC4[n] += AA4_5 * BB5[n];
+                        CC5[n] += AA5_5 * BB5[n];
+                        CC6[n] += AA6_5 * BB5[n];
+                        CC7[n] += AA7_5 * BB5[n];
+
+                        CC0[n] += AA0_6 * BB6[n];
+                        CC1[n] += AA1_6 * BB6[n];
+                        CC2[n] += AA2_6 * BB6[n];
+                        CC3[n] += AA3_6 * BB6[n];
+                        CC4[n] += AA4_6 * BB6[n];
+                        CC5[n] += AA5_6 * BB6[n];
+                        CC6[n] += AA6_6 * BB6[n];
+                        CC7[n] += AA7_6 * BB6[n];
+
+                        CC0[n] += AA0_7 * BB7[n];
+                        CC1[n] += AA1_7 * BB7[n];
+                        CC2[n] += AA2_7 * BB7[n];
+                        CC3[n] += AA3_7 * BB7[n];
+                        CC4[n] += AA4_7 * BB7[n];
+                        CC5[n] += AA5_7 * BB7[n];
+                        CC6[n] += AA6_7 * BB7[n];
+                        CC7[n] += AA7_7 * BB7[n];
+
+                    }//N
+            }//M
+
+
+            for (Nd4jLong m = M_L; m < M; m++) {
+
+                Nd4jLong OFF_A = m * aStride_M;
+                T1 AA0 = alpha * AA[OFF_A];
+                T1 AA0_1 = alpha * AA[OFF_A + 1];
+                T3* __restrict CC = &(C[m * cStride_M]);
+
+
+                PRAGMA_OMP_SIMD
+                    for (Nd4jLong n = 0; n < N; n++) {
+
+                        CC[n] += AA0 * BB0[n];
+                        CC[n] += AA0_1 * BB1[n];
+                    }//N
+            }//M
+        }//K
+        for (Nd4jLong k = K_L; k < K; k++) {
+            const T2* __restrict BB0 = &(B[k * bStride_K]);
+            const T1* __restrict AA = &(A[k * 1]);
+
+            for (Nd4jLong m = 0; m < M_L; m += 8) {
+                Nd4jLong OFF_A = m * aStride_M;
+                T1 AA0 = alpha * AA[OFF_A];
+                T1 AA1 = alpha * AA[OFF_A + aStride_M];
+                T1 AA2 = alpha * AA[OFF_A + 2 * aStride_M];
+                T1 AA3 = alpha * AA[OFF_A + 3 * aStride_M];
+                T1 AA4 = alpha * AA[OFF_A + 4 * aStride_M];
+                T1 AA5 = alpha * AA[OFF_A + 5 * aStride_M];
+                T1 AA6 = alpha * AA[OFF_A + 6 * aStride_M];
+                T1 AA7 = alpha * AA[OFF_A + 7 * aStride_M];
 
                 T3* __restrict CC0 = &(C[m * cStride_M]);
                 T3* __restrict CC1 = &(C[m * cStride_M + cStride_M]);
@@ -121,29 +236,14 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
                 PRAGMA_OMP_SIMD
                     for (Nd4jLong n = 0; n < N; n++) {
                         //  nd4j_printf("%p %lf %lf %lf \n", &(CC[n]),CC[n], AA0, BB[n]);
-                        CC0[n] += AA0 * BB0[n] + AA0_1 * BB1[n] + AA0_2 * BB2[n] + AA0_3 * BB3[n] +
-                            AA0_4 * BB4[n] + AA0_4_1 * BB5[n] + AA0_4_2 * BB6[n] + AA0_4_3 * BB7[n];
-                        CC1[n] += AA1 * BB0[n] + AA1_1 * BB1[n] + AA1_2 * BB2[n] + AA1_3 * BB3[n] +
-                            AA1_4 * BB4[n] + AA1_4_1 * BB5[n] + AA1_4_2 * BB6[n] + AA1_4_3 * BB7[n];
-
-                        CC2[n] += AA2 * BB0[n] + AA2_1 * BB1[n] + AA2_2 * BB2[n] + AA2_3 * BB3[n] +
-                            AA2_4 * BB4[n] + AA2_4_1 * BB5[n] + AA2_4_2 * BB6[n] + AA2_4_3 * BB7[n];
-
-                        CC3[n] += AA3 * BB0[n] + AA3_1 * BB1[n] + AA3_2 * BB2[n] + AA3_3 * BB3[n] +
-                            AA3_4 * BB4[n] + AA3_4_1 * BB5[n] + AA3_4_2 * BB6[n] + AA3_4_3 * BB7[n];
-
-                        CC4[n] += AA4 * BB0[n] + AA4_1 * BB1[n] + AA4_2 * BB2[n] + AA4_3 * BB3[n] +
-                            AA4_4 * BB4[n] + AA4_4_1 * BB5[n] + AA4_4_2 * BB6[n] + AA4_4_3 * BB7[n];
-
-                        CC5[n] += AA5 * BB0[n] + AA5_1 * BB1[n] + AA5_2 * BB2[n] + AA5_3 * BB3[n] +
-                            AA5_4 * BB4[n] + AA5_4_1 * BB5[n] + AA5_4_2 * BB6[n] + AA5_4_3 * BB7[n];
-
-                        CC6[n] += AA6 * BB0[n] + AA6_1 * BB1[n] + AA6_2 * BB2[n] + AA6_3 * BB3[n] +
-                            AA6_4 * BB4[n] + AA6_4_1 * BB5[n] + AA6_4_2 * BB6[n] + AA6_4_3 * BB7[n];
-
-                        CC7[n] += AA7 * BB0[n] + AA7_1 * BB1[n] + AA7_2 * BB2[n] + AA7_3 * BB3[n] +
-                            AA7_4 * BB4[n] + AA7_4_1 * BB5[n] + AA7_4_2 * BB6[n] + AA7_4_3 * BB7[n]; 
-                
+                        CC0[n] += AA0 * BB0[n];
+                        CC1[n] += AA1 * BB0[n];
+                        CC2[n] += AA2 * BB0[n];
+                        CC3[n] += AA3 * BB0[n];
+                        CC4[n] += AA4 * BB0[n];
+                        CC5[n] += AA5 * BB0[n];
+                        CC6[n] += AA6 * BB0[n];
+                        CC7[n] += AA7 * BB0[n];
                     }//N
             }//M
 
@@ -151,59 +251,12 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
 
                 Nd4jLong OFF_A = m * aStride_M;
                 T1 AA0 = alpha * AA[OFF_A];
-                T1 AA0_1 = alpha * AA[OFF_A + 1];
-                T1 AA0_2 = alpha * AA[OFF_A + 2 * 1];
-                T1 AA0_3 = alpha * AA[OFF_A + 3 * 1];
-
-                T1 AA0_4 = alpha * AA[OFF_A + 4];
-                T1 AA0_4_1 = alpha * AA[OFF_A + 1 + 4];
-                T1 AA0_4_2 = alpha * AA[OFF_A + 2 * 1 + 4];
-                T1 AA0_4_3 = alpha * AA[OFF_A + 3 * 1 + 4];
                 T3* __restrict CC = &(C[m * cStride_M]);
 
 
                 PRAGMA_OMP_SIMD
                     for (Nd4jLong n = 0; n < N; n++) {
-
-                        CC[n] += AA0 * BB0[n] + AA0_1 * BB1[n] + AA0_2 * BB2[n] + AA0_3 * BB3[n] +
-                            AA0_4 * BB4[n] + AA0_4_1 * BB5[n] + AA0_4_2 * BB6[n] + AA0_4_3 * BB7[n];
-                            ;
-                    }//N
-            }//M
-        }//K
-        for (Nd4jLong k = K_L; k < K; k++) {
-            const T2* __restrict BB = &(B[k * bStride_K]);
-            const T1* __restrict AA = &(A[k * 1]);
-
-            for (Nd4jLong m = 0; m < M_L; m += 4) {
-
-                T1 AA0 = alpha * AA[m * aStride_M];
-                T1 AA1 = alpha * AA[m * aStride_M + aStride_M];
-                T1 AA2 = alpha * AA[m * aStride_M + 2 * aStride_M];
-                T1 AA3 = alpha * AA[m * aStride_M + 3 * aStride_M];
-                T3* __restrict CC0 = &(C[m * cStride_M]);
-                T3* __restrict CC1 = &(C[m * cStride_M + cStride_M]);
-                T3* __restrict CC2 = &(C[m * cStride_M + 2 * cStride_M]);
-                T3* __restrict CC3 = &(C[m * cStride_M + 3 * cStride_M]);
-
-                PRAGMA_OMP_SIMD
-                    for (Nd4jLong n = 0; n < N; n++) {
-                        //  nd4j_printf("%p %lf %lf %lf \n", &(CC[n]),CC[n], AA0, BB[n]);
-                        CC0[n] += AA0 * BB[n];
-                        CC1[n] += AA1 * BB[n];
-                        CC2[n] += AA2 * BB[n];
-                        CC3[n] += AA3 * BB[n];
-                    }//N
-            }//M
-
-            for (Nd4jLong m = M_L; m < M; m++) {
-                T1 AA0 = alpha * AA[m * aStride_M];
-                T3* __restrict CC = &(C[m * cStride_M]);
-
-                PRAGMA_OMP_SIMD
-                    for (Nd4jLong n = 0; n < N; n++) {
-                        //  nd4j_printf("%p %lf %lf %lf \n", &(CC[n]),CC[n], AA0, BB[n]);
-                        CC[n] += AA0 * BB[n];
+                        CC[n] += AA0 * BB0[n];
                     }//N
             }//M
         }//K
@@ -493,21 +546,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
 
 }
 
-template <typename T1, typename T2, typename T3>
-void ff(uint64_t uui, int64_t start, int64_t stop, int64_t increment, const NDArray* vA, const NDArray* vB, NDArray* vC,
-    const T1 alpha, const T3 beta) {
- #if 0
-        auto timeStart = std::chrono::system_clock::now();
-#endif
-        parallel_batchedGemm3<T1, T2, T3>(vA, vB, vC, alpha, beta, start, stop);
-#if 0
-        auto timeEnd = std::chrono::system_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds> (timeEnd - timeStart).count();
-        nd4j_printf("inner-time:: %lli\n", elapsed_time);
-#endif
  
-}
-
 template <typename T1, typename T2, typename T3>
  void batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,  
     const T1 alpha, const T3 beta,char out_order ) {
@@ -529,12 +568,7 @@ template <typename T1, typename T2, typename T3>
         batch_len *= bases[i];
     }
 
-#if 0
-
-    // samediff::Threads::parallel_tad(func, 0, batch_len);
-    samediff::Threads::parallel_aligned_increment2(ff<T1,T2,T3>, 0, batch_len, 1,vA,vB,vC,alpha,beta);
-
-#else
+ 
 
     auto func = [vA, vB, vC,   alpha, beta](uint64_t thread_id, int64_t start, int64_t stop, int64_t increment) -> void {
 #if 0
@@ -551,13 +585,11 @@ template <typename T1, typename T2, typename T3>
     // samediff::Threads::parallel_tad(func, 0, batch_len);
     samediff::Threads::parallel_aligned_increment(func, 0, batch_len, 1, false);
 
-#endif
+ 
 }
 
  template void batchedGemm3<float, float, float>(const NDArray* vA, const NDArray* vB, NDArray* vC,  const float alpha, const float beta, char out_order);
- template void   ff<float, float, float>(uint64_t uui, int64_t start, int64_t stop, int64_t increment, const NDArray* vA, const NDArray* vB, NDArray* vC,  float alpha,   float beta);
- //usualgemm from nd
-
+  
  template <typename T1, typename T2, typename T3>
     void usualGemm(const NDArray* vA, const NDArray* vB, NDArray* vC,
      const int aMaxis, const int aKaxis, const int bKaxis, const int bNaxis, const int cMaxis, const int cNaxis,

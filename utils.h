@@ -41,7 +41,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	//for floats
-	std::uniform_real_distribution<T> dis((T)0.0, (T)2.0);
+	std::uniform_real_distribution<T> dis((T)11.1, (T)44.5);
 	T* x = arr.bufferAsT<T>();
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
 	Nd4jLong* strides = arr.stridesOf();
@@ -115,4 +115,42 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 		}
 
 	}
+}
+
+
+
+template<typename T>
+bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,double abs_err=0.0001) {
+	Nd4jLong coords[MAX_RANK] = {};
+ 
+	Nd4jLong* shapeInfo = arr.getShapeInfo();
+	Nd4jLong* shapeInfo2 = arr2.getShapeInfo();
+	Nd4jLong* strides = arr.stridesOf();
+	Nd4jLong* strides2 = arr.stridesOf();
+	Nd4jLong rank = shapeInfo[0];
+	T *buff1 = arr.bufferAsT<T>();
+	T* buff2 = arr2.bufferAsT<T>();
+	if (rank != shapeInfo2[0]) {
+		fprintf(stderr, "rank1 %lli rank2 %lli\n", rank, shapeInfo2[0]);
+		return false;
+	}
+	Nd4jLong* bases = &(shapeInfo[1]);
+	Nd4jLong* bases2 = &(shapeInfo2[1]);
+	Nd4jLong t = 1;
+	for (size_t i = 0; i < rank - 1; i++) {
+		t *= bases[i];
+		if (bases[i] != bases2[i]) {
+			fprintf(stderr, "bases index %d)  %lli vs %lli\n",i,bases[i],bases2[i]);
+			return false;
+		}
+	}
+	sd::zip_size_t offset = {};
+	double max_diff = 0;
+			for (size_t i = 0; i < t; i++) {
+
+				max_diff = std::max(max_diff, (double)std::abs(buff1[offset.first] - buff2[offset.second])  );
+				offset = sd::inc_coords(bases, strides,strides2, coords, offset,rank);
+			}
+			fprintf(stderr, "max difference %f \n", max_diff);
+	return max_diff>abs_err;
 }
