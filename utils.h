@@ -41,7 +41,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	//for floats
-	std::uniform_real_distribution<T> dis((T)11.1, (T)44.5);
+	std::uniform_real_distribution<T> dis((T)0.0, (T)2.5);
 	T* x = arr.bufferAsT<T>();
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
 	Nd4jLong* strides = arr.stridesOf();
@@ -81,7 +81,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 				//1 time
 				for (size_t j = 0; j < M; j++) {
 					for (size_t n_i = 0; n_i < N; n_i++) {
-						x[j * stride_m + n_i * stride_n] = dis(gen);
+						x[j * stride_m + n_i * stride_n] =   dis(gen) + (T)0.5;
 						//nd4j_printf("%lf  %ld  %ld %ld\n", x[j * stride_n + n_i], stride_n,j,n_i);
 					}
 				}
@@ -101,7 +101,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 		}
 	}
 	else {
-		auto fill_buffer = fill->bufferAsT<float>();
+		auto fill_buffer = fill->bufferAsT<T>();
 		for (size_t i = 0; i < t; i++) {
 			//m*n
 			auto fill_stride_m = fill->stridesOf()[0];
@@ -120,7 +120,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 
 
 template<typename T>
-bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,double abs_err=0.0001) {
+bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 	Nd4jLong coords[MAX_RANK] = {};
  
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
@@ -137,7 +137,7 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,double abs_err=0.0001) {
 	Nd4jLong* bases = &(shapeInfo[1]);
 	Nd4jLong* bases2 = &(shapeInfo2[1]);
 	Nd4jLong t = 1;
-	for (size_t i = 0; i < rank - 1; i++) {
+	for (size_t i = 0; i < rank  ; i++) {
 		t *= bases[i];
 		if (bases[i] != bases2[i]) {
 			fprintf(stderr, "bases index %d)  %lli vs %lli\n",i,bases[i],bases2[i]);
@@ -145,12 +145,21 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,double abs_err=0.0001) {
 		}
 	}
 	sd::zip_size_t offset = {};
-	double max_diff = 0;
+	T max_diff =(T) 0;
 			for (size_t i = 0; i < t; i++) {
-
-				max_diff = std::max(max_diff, (double)std::abs(buff1[offset.first] - buff2[offset.second])  );
+				T diff = std::abs(buff1[offset.first] - buff2[offset.second]);
+#if 0
+				  if (diff > abs_err) {
+					fprintf(stderr, "[");
+					for (int i = 0; i < rank - 1; i++) {
+						fprintf(stderr, "%ld, ",coords[i]);
+					}
+					fprintf(stderr, "%ld] : %.9g vs %.9g\n", coords[rank-1], buff1[offset.first] , buff2[offset.second]);
+				  }
+#endif
+				max_diff = std::max(max_diff,diff  );
 				offset = sd::inc_coords(bases, strides,strides2, coords, offset,rank);
 			}
-			fprintf(stderr, "max difference %f \n", max_diff);
+			fprintf(stderr, "max difference %.9g \n", max_diff);
 	return max_diff>abs_err;
 }
