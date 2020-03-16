@@ -394,7 +394,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                     for (Nd4jLong n = 0; n < N; n++) {
                         T3* __restrict C_SOURCE = &(C_PTR[n]);
                         for (Nd4jLong m = 0; m < M; m++) {
-                            CX[m * cStride_M] = beta * CX[m * cStride_M] + alpha * (*C_SOURCE) ;
+                            CX[m * cStride_M] = betaZ * CX[m * cStride_M] + alphaZ * (*C_SOURCE) ;
                             (*C_SOURCE) = 0;
                             C_SOURCE += N;
                         }//N
@@ -407,7 +407,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                     for (Nd4jLong n = 0; n < N; n++) {
                         T3* __restrict C_SOURCE = &(C_PTR[n]);
                         for (Nd4jLong m = 0; m < M; m++) {
-                            CX[m * cStride_M] = alpha * (*C_SOURCE);
+                            CX[m * cStride_M] = alphaZ * (*C_SOURCE);
                             (*C_SOURCE) = 0;
                             C_SOURCE += N;
                         }//N
@@ -422,7 +422,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                     if (cStride_N == 1) {
                         for (Nd4jLong m = 0; m < M; m++) {
                             for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * 1] = beta * CX[n * 1] + alpha * C_PTR[n];
+                                CX[n * 1] = betaZ * CX[n * 1] + alphaZ * C_PTR[n];
                                 C_PTR[n] = 0;
                             }//M
 
@@ -433,7 +433,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                     else {
                         for (Nd4jLong m = 0; m < M; m++) {
                             for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * cStride_N] = beta * CX[n * cStride_N] + alpha * C_PTR[n];
+                                CX[n * cStride_N] = betaZ * CX[n * cStride_N] + alphaZ * C_PTR[n];
                                 C_PTR[n] = 0;
                             }//M
 
@@ -447,7 +447,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                         for (Nd4jLong m = 0; m < M; m++) {
 
                             for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * 1] = alpha * C_PTR[n];
+                                CX[n * 1] = alphaZ * C_PTR[n];
                                 C_PTR[n] = 0;
                             }//M
 
@@ -459,7 +459,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
                         for (Nd4jLong m = 0; m < M; m++) {
 
                             for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * cStride_N] = alpha * C_PTR[n];
+                                CX[n * cStride_N] = alphaZ * C_PTR[n];
                                 C_PTR[n] = 0;
                             }//M
 
