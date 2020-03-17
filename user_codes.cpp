@@ -307,29 +307,195 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
     }
 }
 
+template<typename T3>
+static FORCEINLINE void zero_buffer(T3* C_PTR, int M, int N) {
+    int M_8 = M & (-8);
+
+    for (Nd4jLong m = 0; m < M_8; m += 8) {
+        T3* C_PTR1 = &(C_PTR[N]);
+        T3* C_PTR2 = &(C_PTR[2 * N]);
+        T3* C_PTR3 = &(C_PTR[3 * N]);
+        T3* C_PTR4 = &(C_PTR[4 * N]);
+        T3* C_PTR5 = &(C_PTR[5 * N]);
+        T3* C_PTR6 = &(C_PTR[6 * N]);
+        T3* C_PTR7 = &(C_PTR[7 * N]);
+
+        for (Nd4jLong n = 0; n < N; n++) {
+            C_PTR[n] = 0;
+            C_PTR1[n] = 0;
+            C_PTR2[n] = 0;
+            C_PTR3[n] = 0;
+            C_PTR4[n] = 0;
+            C_PTR5[n] = 0;
+            C_PTR6[n] = 0;
+            C_PTR7[n] = 0;
+        }//M
+
+        C_PTR += 8 * N;
+    }//N
+
+    for (Nd4jLong m = M_8; m < M; m++) {
+
+        for (Nd4jLong n = 0; n < N; n++) {
+            C_PTR[n] = 0;
+        }//M 
+        C_PTR += N;
+    }//N
+
+}
+
+
+template<typename T3>
+void copy_buffer(T3* dest, T3* source, T3 alphaZ, T3 betaZ, int M, int N, Nd4jLong dest_stride_m, Nd4jLong dest_stride_n) {
+    if (dest_stride_n == 1 && dest_stride_m == N) {
+        int M_8 = M & (-8);
+
+        if ((bool)betaZ) {
+
+            for (Nd4jLong m = 0; m < M_8; m += 8) {
+
+                T3* dest1 = &(dest[1 * N]);
+                T3* dest2 = &(dest[2 * N]);
+                T3* dest3 = &(dest[3 * N]);
+                T3* dest4 = &(dest[4 * N]);
+                T3* dest5 = &(dest[5 * N]);
+                T3* dest6 = &(dest[6 * N]);
+                T3* dest7 = &(dest[7 * N]);
+
+                T3* source1 = &(source[1 * N]);
+                T3* source2 = &(source[2 * N]);
+                T3* source3 = &(source[3 * N]);
+                T3* source4 = &(source[4 * N]);
+                T3* source5 = &(source[5 * N]);
+                T3* source6 = &(source[6 * N]);
+                T3* source7 = &(source[7 * N]);
+
+                for (Nd4jLong n = 0; n < N; n++) {
+                    dest[n * 1] = betaZ * dest[n * 1] + alphaZ * source[n];
+                    dest1[n * 1] = betaZ * dest1[n * 1] + alphaZ * source1[n];
+                    dest2[n * 1] = betaZ * dest2[n * 1] + alphaZ * source2[n];
+                    dest3[n * 1] = betaZ * dest3[n * 1] + alphaZ * source3[n];
+                    dest4[n * 1] = betaZ * dest4[n * 1] + alphaZ * source4[n];
+                    dest5[n * 1] = betaZ * dest5[n * 1] + alphaZ * source5[n];
+                    dest6[n * 1] = betaZ * dest6[n * 1] + alphaZ * source6[n];
+                    dest7[n * 1] = betaZ * dest7[n * 1] + alphaZ * source7[n];
+                }//M
+
+
+                source += 8 * N;
+                dest += 8 * N;
+            }//N
+
+            for (Nd4jLong m = M_8; m < M; m++) {
+
+                for (Nd4jLong n = 0; n < N; n++) {
+                    dest[n * 1] = betaZ * dest[n * 1] + alphaZ * source[n];
+                    source[n] = 0;
+                }//M 
+                source += N;
+                dest += N;
+            }//N
+        }
+        else {
+
+            for (Nd4jLong m = 0; m < M_8; m += 8) {
+
+                T3* dest1 = &(dest[N]);
+                T3* dest2 = &(dest[2 * N]);
+                T3* dest3 = &(dest[3 * N]);
+                T3* dest4 = &(dest[4 * N]);
+                T3* dest5 = &(dest[5 * N]);
+                T3* dest6 = &(dest[6 * N]);
+                T3* dest7 = &(dest[7 * N]);
+
+                T3* source1 = &(source[N]);
+                T3* source2 = &(source[2 * N]);
+                T3* source3 = &(source[3 * N]);
+                T3* source4 = &(source[4 * N]);
+                T3* source5 = &(source[5 * N]);
+                T3* source6 = &(source[6 * N]);
+                T3* source7 = &(source[7 * N]);
+
+                for (Nd4jLong n = 0; n < N; n++) {
+                    dest[n * 1] = alphaZ * source[n];
+                    dest1[n * 1] = alphaZ * source1[n];
+                    dest2[n * 1] = alphaZ * source2[n];
+                    dest3[n * 1] = alphaZ * source3[n];
+                    dest4[n * 1] = alphaZ * source4[n];
+                    dest5[n * 1] = alphaZ * source5[n];
+                    dest6[n * 1] = alphaZ * source6[n];
+                    dest7[n * 1] = alphaZ * source7[n];
+                }//M
+
+
+                source += 8 * N;
+                dest += 8 * N;
+            }//N
+
+            for (Nd4jLong m = M_8; m < M; m++) {
+
+                for (Nd4jLong n = 0; n < N; n++) {
+                    dest[n * 1] = alphaZ * source[n];
+                    source[n] = 0;
+                }//M 
+                source += N;
+                dest += N;
+            }//N
+
+        }//betaZ
+
+    }
+    else if (dest_stride_m < dest_stride_n) {
+
+        if ((bool)betaZ) {
+            for (Nd4jLong n = 0; n < N; n++) {
+                T3* __restrict source_0 = &(source[n]);
+                for (Nd4jLong m = 0; m < M; m++) {
+                    dest[m * dest_stride_m] = betaZ * dest[m * dest_stride_m] + alphaZ * (*source_0);
+                    source_0 += N;
+                }//N
+                dest += dest_stride_n;
+            }//M
+
+        }
+        else {
+            for (Nd4jLong n = 0; n < N; n++) {
+                T3* __restrict source_0 = &(source[n]);
+                for (Nd4jLong m = 0; m < M; m++) {
+                    dest[m * dest_stride_m] = alphaZ * (*source_0);
+                    source_0 += N;
+                }//N
+                dest += dest_stride_n;
+            }//M  
+
+        }
+
+    }
+    else {
+        for (Nd4jLong m = 0; m < M; m++) {
+            for (Nd4jLong n = 0; n < N; n++) {
+                dest[n * dest_stride_n] = betaZ * dest[n * dest_stride_n] + alphaZ * source[n];
+            }//M
+
+            source += N;
+            dest += dest_stride_m;
+        }//N
+    }
+}
+
 
 template <typename T1, typename T2, typename T3>
-static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,   
+static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,
     const double alpha, const double beta, Nd4jLong start, Nd4jLong stop) {
 
     const T1* A = vA->bufferAsT<T1>();
     const T2* B = vB->bufferAsT<T2>();
     T3* C = vC->bufferAsT<T3>();
-
-
     Nd4jLong zero_strides[MAX_RANK] = {}; //zero strides
-
-
     const T3 alphaZ = (T3)alpha;
-    const T3 betaZ = (T3)beta;
-
-    const bool betaPersent = beta;
-
-
+    const T3 betaZ = (T3)beta; 
     const Nd4jLong* cShapeInfo = vC->getShapeInfo();
-
     const Nd4jLong* bases = &(cShapeInfo[1]);
-
     Nd4jLong* aStrides = vA->stridesOf();
     Nd4jLong* bStrides = vB->stridesOf();
     const Nd4jLong* cStrides = vC->stridesOf();
@@ -348,11 +514,6 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
 
     int max_rank = aRank > bRank ? aRank : bRank;
     max_rank = max_rank > cRank ? max_rank : cRank;
-
-    //Nd4jLong batch_len = 1;
-    //for (int i = 0; i < max_rank - 2; i++) {
-    //    batch_len *= bases[i];
-    //}
 
     const int M = vA->sizeAt(aRank - 2);
     const int K = vA->sizeAt(aRank - 1);
@@ -375,108 +536,19 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     Nd4jLong loop = stop - start;
     bool out_order_f = cStride_M < cStride_N;
     T3* __restrict C_PTR_ORIG = C;
-  
-        C_PTR_ORIG = new T3[M * N];
-        memset(C_PTR_ORIG, 0, sizeof(T3) * M * N);
-        
 
-    
-        for (Nd4jLong i = 0; i < loop; i++) {
-            T3* __restrict C_PTR = C_PTR_ORIG;
-            // memset(C_PTR, 0, sizeof(T3) * M * N);
-
-            inner_gemm_no_checks(M, N, K,  &(A[offset.first]), aStride_M, aStride_K, &(B[offset.second]), bStride_K, bStride_N, C_PTR, N);
-
-            T3* __restrict CX = &(C[offset.third]);
-            if (out_order_f) {
-
-                if (betaPersent) {
-                    for (Nd4jLong n = 0; n < N; n++) {
-                        T3* __restrict C_SOURCE = &(C_PTR[n]);
-                        for (Nd4jLong m = 0; m < M; m++) {
-                            CX[m * cStride_M] = betaZ * CX[m * cStride_M] + alphaZ * (*C_SOURCE) ;
-                            (*C_SOURCE) = 0;
-                            C_SOURCE += N;
-                        }//N
-                        CX += cStride_N;
-                    }//M 
+    C_PTR_ORIG = new T3[M * N];
 
 
-                }
-                else {
-                    for (Nd4jLong n = 0; n < N; n++) {
-                        T3* __restrict C_SOURCE = &(C_PTR[n]);
-                        for (Nd4jLong m = 0; m < M; m++) {
-                            CX[m * cStride_M] = alphaZ * (*C_SOURCE);
-                            (*C_SOURCE) = 0;
-                            C_SOURCE += N;
-                        }//N
-                        CX += cStride_N;
-                    }//M  
-
-                }
-
-            }
-            else {
-                if (betaPersent) {
-                    if (cStride_N == 1) {
-                        for (Nd4jLong m = 0; m < M; m++) {
-                            for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * 1] = betaZ * CX[n * 1] + alphaZ * C_PTR[n];
-                                C_PTR[n] = 0;
-                            }//M
-
-                            C_PTR += N;
-                            CX += N;
-                        }//N
-                    }
-                    else {
-                        for (Nd4jLong m = 0; m < M; m++) {
-                            for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * cStride_N] = betaZ * CX[n * cStride_N] + alphaZ * C_PTR[n];
-                                C_PTR[n] = 0;
-                            }//M
-
-                            C_PTR += N;
-                            CX += cStride_M;
-                        }//N
-                    }
-                }
-                else {
-                    if (cStride_N == 1) {
-                        for (Nd4jLong m = 0; m < M; m++) {
-
-                            for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * 1] = alphaZ * C_PTR[n];
-                                C_PTR[n] = 0;
-                            }//M
-
-                            C_PTR += N;
-                            CX += N;
-                        }//N
-                    }
-                    else {
-                        for (Nd4jLong m = 0; m < M; m++) {
-
-                            for (Nd4jLong n = 0; n < N; n++) {
-                                CX[n * cStride_N] = alphaZ * C_PTR[n];
-                                C_PTR[n] = 0;
-                            }//M
-
-                            C_PTR += N;
-                            CX += cStride_M;
-                        }//N
-                    }
-                }
-            }
-
-
-            offset = sd::inc_coords(bases, aStrides, bStrides, cStrides, ptr_coords, offset, max_rank, 2);
-        }
-        delete[] C_PTR_ORIG;
-
- 
-
+    for (Nd4jLong i = 0; i < loop; i++) {    
+        zero_buffer(C_PTR_ORIG, M, N);
+        inner_gemm_no_checks(M, N, K, &(A[offset.first]), aStride_M, aStride_K, &(B[offset.second]), bStride_K, bStride_N, C_PTR_ORIG, N);
+        T3* __restrict CX = &(C[offset.third]); 
+        copy_buffer(CX, C_PTR_ORIG, alphaZ, betaZ, M, N, cStride_M, cStride_N);
+        offset = sd::inc_coords(bases, aStrides, bStrides, cStrides, ptr_coords, offset, max_rank, 2);
+    }
+     
+     delete[] C_PTR_ORIG; 
 }
 
  
