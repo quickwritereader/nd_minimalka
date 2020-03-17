@@ -26,5 +26,8 @@ target_include_directories(minimal_nd2 PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT
 add_executable (minimal_nd3 "main.cpp"  ${EXTRAS}   "user_codes3.cpp"  "reference.cpp")
 target_include_directories(minimal_nd3 PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
 
+add_executable (minimal_nd5 "main.cpp"  ${EXTRAS}   "user_codes5.cpp"  "reference.cpp")
+target_include_directories(minimal_nd5 PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
+
 add_executable (minimal_orig "main.cpp"  ${EXTRAS}   "original.cpp"  "reference.cpp")
 target_include_directories(minimal_orig PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
