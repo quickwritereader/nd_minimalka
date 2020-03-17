@@ -41,7 +41,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	//for floats
-	std::uniform_real_distribution<T> dis((T)0.0, (T)2.5);
+	std::uniform_real_distribution<T> dis((T)0.0, (T)0.9);
 	T* x = arr.bufferAsT<T>();
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
 	Nd4jLong* strides = arr.stridesOf();
@@ -148,7 +148,7 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 	T max_diff =(T) 0;
 			for (size_t i = 0; i < t; i++) {
 				T diff = std::abs(buff1[offset.first] - buff2[offset.second]);
-#if 0
+#if 1
 				  if (diff > abs_err) {
 					fprintf(stderr, "[");
 					for (int i = 0; i < rank - 1; i++) {

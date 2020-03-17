@@ -13,7 +13,7 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
 
     if ( aStride_K == 1 && bStride_N == 1) {
         //cStride_N ==1
-        Nd4jLong M_L =   M & -8;;
+        Nd4jLong M_L =   M & -16;;
         Nd4jLong K_L = K & -8;// 8;
 
         for (Nd4jLong k = 0; k < K_L; k += 8) {
@@ -27,81 +27,24 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
             const T2* __restrict BB6 = &(B[k * bStride_K + 6 * bStride_K]);
             const T2* __restrict BB7 = &(B[k * bStride_K + 7 * bStride_K]);
             const T1* __restrict AA = &(A[k * 1]);
-            for (Nd4jLong m = 0; m < M_L; m += 8) {
+            for (Nd4jLong m = 0; m < M_L; m += 16) {
                 Nd4jLong OFF_A = m * aStride_M;
-                T1 AA0 =  AA[OFF_A];
-                T1 AA1 =  AA[OFF_A + aStride_M];
-                T1 AA2 =  AA[OFF_A + 2 * aStride_M];
-                T1 AA3 =  AA[OFF_A + 3 * aStride_M];
-                T1 AA4 =  AA[OFF_A + 4 * aStride_M];
-                T1 AA5 =  AA[OFF_A + 5 * aStride_M];
-                T1 AA6 =  AA[OFF_A + 6 * aStride_M];
-                T1 AA7 =  AA[OFF_A + 7 * aStride_M];
-
-                T1 AA0_1 =  AA[OFF_A + 1];
-                T1 AA1_1 =  AA[OFF_A + aStride_M + 1];
-                T1 AA2_1 =  AA[OFF_A + 2 * aStride_M + 1];
-                T1 AA3_1 =  AA[OFF_A + 3 * aStride_M + 1];
-                T1 AA4_1 =  AA[OFF_A + 4 * aStride_M + 1];
-                T1 AA5_1 =  AA[OFF_A + 5 * aStride_M + 1];
-                T1 AA6_1 =  AA[OFF_A + 6 * aStride_M + 1];
-                T1 AA7_1 =  AA[OFF_A + 7 * aStride_M + 1];
-
-                T1 AA0_2 =  AA[OFF_A + 2];
-                T1 AA1_2 =  AA[OFF_A + aStride_M + 2];
-                T1 AA2_2 =  AA[OFF_A + 2 * aStride_M + 2];
-                T1 AA3_2 =  AA[OFF_A + 3 * aStride_M + 2];
-                T1 AA4_2 =  AA[OFF_A + 4 * aStride_M + 2];
-                T1 AA5_2 =  AA[OFF_A + 5 * aStride_M + 2];
-                T1 AA6_2 =  AA[OFF_A + 6 * aStride_M + 2];
-                T1 AA7_2 =  AA[OFF_A + 7 * aStride_M + 2];
-
-                T1 AA0_3 =  AA[OFF_A + 3];
-                T1 AA1_3 =  AA[OFF_A + aStride_M + 3];
-                T1 AA2_3 =  AA[OFF_A + 2 * aStride_M + 3];
-                T1 AA3_3 =  AA[OFF_A + 3 * aStride_M + 3];
-                T1 AA4_3 =  AA[OFF_A + 4 * aStride_M + 3];
-                T1 AA5_3 =  AA[OFF_A + 5 * aStride_M + 3];
-                T1 AA6_3 =  AA[OFF_A + 6 * aStride_M + 3];
-                T1 AA7_3 =  AA[OFF_A + 7 * aStride_M + 3];
-
-                T1 AA0_4 =  AA[OFF_A + 4];
-                T1 AA1_4 =  AA[OFF_A + aStride_M + 4];
-                T1 AA2_4 =  AA[OFF_A + 2 * aStride_M + 4];
-                T1 AA3_4 =  AA[OFF_A + 3 * aStride_M + 4];
-                T1 AA4_4 =  AA[OFF_A + 4 * aStride_M + 4];
-                T1 AA5_4 =  AA[OFF_A + 5 * aStride_M + 4];
-                T1 AA6_4 =  AA[OFF_A + 6 * aStride_M + 4];
-                T1 AA7_4 =  AA[OFF_A + 7 * aStride_M + 4];
-
-
-                T1 AA0_5 =  AA[OFF_A + 5];
-                T1 AA1_5 =  AA[OFF_A + aStride_M + 5];
-                T1 AA2_5 =  AA[OFF_A + 2 * aStride_M + 5];
-                T1 AA3_5 =  AA[OFF_A + 3 * aStride_M + 5];
-                T1 AA4_5 =  AA[OFF_A + 4 * aStride_M + 5];
-                T1 AA5_5 =  AA[OFF_A + 5 * aStride_M + 5];
-                T1 AA6_5 =  AA[OFF_A + 6 * aStride_M + 5];
-                T1 AA7_5 =  AA[OFF_A + 7 * aStride_M + 5];
-
-                T1 AA0_6 =  AA[OFF_A + 6];
-                T1 AA1_6 =  AA[OFF_A + aStride_M + 6];
-                T1 AA2_6 =  AA[OFF_A + 2 * aStride_M + 6];
-                T1 AA3_6 =  AA[OFF_A + 3 * aStride_M + 6];
-                T1 AA4_6 =  AA[OFF_A + 4 * aStride_M + 6];
-                T1 AA5_6 =  AA[OFF_A + 5 * aStride_M + 6];
-                T1 AA6_6 =  AA[OFF_A + 6 * aStride_M + 6];
-                T1 AA7_6 =  AA[OFF_A + 7 * aStride_M + 6];
-
-
-                T1 AA0_7 =  AA[OFF_A + 7];
-                T1 AA1_7 =  AA[OFF_A + aStride_M + 7];
-                T1 AA2_7 =  AA[OFF_A + 2 * aStride_M + 7];
-                T1 AA3_7 =  AA[OFF_A + 3 * aStride_M + 7];
-                T1 AA4_7 =  AA[OFF_A + 4 * aStride_M + 7];
-                T1 AA5_7 =  AA[OFF_A + 5 * aStride_M + 7];
-                T1 AA6_7 =  AA[OFF_A + 6 * aStride_M + 7];
-                T1 AA7_7 =  AA[OFF_A + 7 * aStride_M + 7];
+                const T1* __restrict PTR_A0 = &(AA[OFF_A]);
+                const T1* __restrict PTR_A1 = &(AA[OFF_A + aStride_M]);
+                const T1* __restrict PTR_A2 = &(AA[OFF_A + 2 * aStride_M]);
+                const T1* __restrict PTR_A3 = &(AA[OFF_A + 3 * aStride_M]);
+                const T1* __restrict PTR_A4 = &(AA[OFF_A + 4 * aStride_M]);
+                const T1* __restrict PTR_A5 = &(AA[OFF_A + 5 * aStride_M]);
+                const T1* __restrict PTR_A6 = &(AA[OFF_A + 6 * aStride_M]);
+                const T1* __restrict PTR_A7 = &(AA[OFF_A + 7 * aStride_M]);
+                const T1* __restrict PTR_A8 = &(AA[OFF_A + 8 * aStride_M]);
+                const T1* __restrict PTR_A9 = &(AA[OFF_A + 9 * aStride_M]);
+                const T1* __restrict PTR_A10 = &(AA[OFF_A + 10 * aStride_M]);
+                const T1* __restrict PTR_A11 = &(AA[OFF_A + 11 * aStride_M]);
+                const T1* __restrict PTR_A12 = &(AA[OFF_A + 12 * aStride_M]);
+                const T1* __restrict PTR_A13 = &(AA[OFF_A + 13 * aStride_M]);
+                const T1* __restrict PTR_A14 = &(AA[OFF_A + 14 * aStride_M]);
+                const T1* __restrict PTR_A15 = &(AA[OFF_A + 15 * aStride_M]);
 
                 T3* __restrict CC0 = &(C[m * cStride_M]);
                 T3* __restrict CC1 = &(C[m * cStride_M + cStride_M]);
@@ -113,56 +56,78 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
                 T3* __restrict CC6 = &(C[m * cStride_M + 6 * cStride_M]);
                 T3* __restrict CC7 = &(C[m * cStride_M + 7 * cStride_M]);
 
-                PRAGMA_OMP_SIMD
-                for (Nd4jLong n = 0; n < N; n++) {
-                       //   nd4j_printf("%p %lf %lf*%lf + %lf*%lf +%lf*%lf +%lf*%lf +%lf*%lf +%lf*%lf +%lf*%lf +  \n", &(CC0[n]),CC0[n],  AA0 , BB0[n], AA0_1, BB1[n], AA0_2 , BB2[n] ,AA0_3, BB3[n] , AA0_4 , BB4[n] , AA0_5, BB5[n] , AA0_6, BB6[n] , AA0_7, BB7[n]);
-                    CC0[n] += alpha * (AA0 * BB0[n] + AA0_1 * BB1[n] + AA0_2 * BB2[n] + AA0_3 * BB3[n] + AA0_4 * BB4[n] + AA0_5 * BB5[n] + AA0_6 * BB6[n] + AA0_7 * BB7[n]);
-                    CC1[n] += alpha * (AA1 * BB0[n] + AA1_1 * BB1[n] + AA1_2 * BB2[n] + AA1_3 * BB3[n] + AA1_4 * BB4[n] + AA1_5 * BB5[n] + AA1_6 * BB6[n] + AA1_7 * BB7[n]);
-                    CC2[n] += alpha * (AA2 * BB0[n] + AA2_1 * BB1[n] + AA2_2 * BB2[n] + AA2_3 * BB3[n] + AA2_4 * BB4[n] + AA2_5 * BB5[n] + AA2_6 * BB6[n] + AA2_7 * BB7[n]);
-                    CC3[n] += alpha * (AA3 * BB0[n] + AA3_1 * BB1[n] + AA3_2 * BB2[n] + AA3_3 * BB3[n] + AA3_4 * BB4[n] + AA3_5 * BB5[n] + AA3_6 * BB6[n] + AA3_7 * BB7[n]);
+                T3* __restrict CC8 = &(C[m * cStride_M + 8 * cStride_M]);
+                T3* __restrict CC9 = &(C[m * cStride_M + 9 * cStride_M]);
+                T3* __restrict CC10 = &(C[m * cStride_M + 10 * cStride_M]);
+                T3* __restrict CC11 = &(C[m * cStride_M + 11 * cStride_M]);
 
-                    CC4[n] += alpha * (AA4 * BB0[n] + AA4_1 * BB1[n] + AA4_2 * BB2[n] + AA4_3 * BB3[n] + AA4_4 * BB4[n] + AA4_5 * BB5[n] + AA4_6 * BB6[n] + AA4_7 * BB7[n]);
-                    CC5[n] += alpha * (AA5 * BB0[n] + AA5_1 * BB1[n] + AA5_2 * BB2[n] + AA5_3 * BB3[n] + AA5_4 * BB4[n] + AA5_5 * BB5[n] + AA5_6 * BB6[n] + AA5_7 * BB7[n]);
-                    CC6[n] += alpha * (AA6 * BB0[n] + AA6_1 * BB1[n] + AA6_2 * BB2[n] + AA6_3 * BB3[n] + AA6_4 * BB4[n] + AA6_5 * BB5[n] + AA6_6 * BB6[n] + AA6_7 * BB7[n]);
-                    CC7[n] += alpha * (AA7 * BB0[n] + AA7_1 * BB1[n] + AA7_2 * BB2[n] + AA7_3 * BB3[n] + AA7_4 * BB4[n] + AA7_5 * BB5[n] + AA7_6 * BB6[n] + AA7_7 * BB7[n]);
-                    }//N
-            }//M
-
-
-            for (Nd4jLong m = M_L; m < M; m++) {
-
-                Nd4jLong OFF_A = m * aStride_M;
-                T1 AA0   =  AA[OFF_A];
-                T1 AA0_1 =  AA[OFF_A + 1];
-                T1 AA0_2 =  AA[OFF_A + 2];
-                T1 AA0_3 =  AA[OFF_A + 3];
-                T1 AA0_4 =  AA[OFF_A + 4];
-                T1 AA0_5 =  AA[OFF_A + 5];
-                T1 AA0_6 =  AA[OFF_A + 6];
-                T1 AA0_7 =  AA[OFF_A + 7];
-                T3* __restrict CC0 = &(C[m * cStride_M]);
-
+                T3* __restrict CC12 = &(C[m * cStride_M + 12 * cStride_M]);
+                T3* __restrict CC13 = &(C[m * cStride_M + 13 * cStride_M]);
+                T3* __restrict CC14 = &(C[m * cStride_M + 14 * cStride_M]);
+                T3* __restrict CC15 = &(C[m * cStride_M + 15 * cStride_M]);
 
                 PRAGMA_OMP_SIMD
                     for (Nd4jLong n = 0; n < N; n++) {
-                        CC0[n] += alpha * (AA0 * BB0[n] + AA0_1 * BB1[n] + AA0_2 * BB2[n] + AA0_3 * BB3[n] + AA0_4 * BB4[n] + AA0_5 * BB5[n] + AA0_6 * BB6[n] + AA0_7 * BB7[n]);
-                    }//N
+
+                        CC0[n] += alpha * (*(PTR_A0)*BB0[n] + *(PTR_A0 + 1) * BB1[n] + *(PTR_A0 + 2) * BB2[n] + *(PTR_A0 + 3) * BB3[n] + *(PTR_A0 + 4) * BB4[n] + *(PTR_A0 + 5) * BB5[n] + *(PTR_A0 + 6) * BB6[n] + *(PTR_A0 + 7) * BB7[n]);
+                        CC1[n] += alpha * (*(PTR_A1)*BB0[n] + *(PTR_A1 + 1) * BB1[n] + *(PTR_A1 + 2) * BB2[n] + *(PTR_A1 + 3) * BB3[n] + *(PTR_A1 + 4) * BB4[n] + *(PTR_A1 + 5) * BB5[n] + *(PTR_A1 + 6) * BB6[n] + *(PTR_A1 + 7) * BB7[n]);
+                        CC2[n] += alpha * (*(PTR_A2)*BB0[n] + *(PTR_A2 + 1) * BB1[n] + *(PTR_A2 + 2) * BB2[n] + *(PTR_A2 + 3) * BB3[n] + *(PTR_A2 + 4) * BB4[n] + *(PTR_A2 + 5) * BB5[n] + *(PTR_A2 + 6) * BB6[n] + *(PTR_A2 + 7) * BB7[n]);
+                        CC3[n] += alpha * (*(PTR_A3)*BB0[n] + *(PTR_A3 + 1) * BB1[n] + *(PTR_A3 + 2) * BB2[n] + *(PTR_A3 + 3) * BB3[n] + *(PTR_A3 + 4) * BB4[n] + *(PTR_A3 + 5) * BB5[n] + *(PTR_A3 + 6) * BB6[n] + *(PTR_A3 + 7) * BB7[n]);
+
+                        CC4[n] += alpha * (*(PTR_A4)*BB0[n] + *(PTR_A4 + 1) * BB1[n] + *(PTR_A4 + 2) * BB2[n] + *(PTR_A4 + 3) * BB3[n] + *(PTR_A4 + 4) * BB4[n] + *(PTR_A4 + 5) * BB5[n] + *(PTR_A4 + 6) * BB6[n] + *(PTR_A4 + 7) * BB7[n]);
+                        CC5[n] += alpha * (*(PTR_A5)*BB0[n] + *(PTR_A5 + 1) * BB1[n] + *(PTR_A5 + 2) * BB2[n] + *(PTR_A5 + 3) * BB3[n] + *(PTR_A5 + 4) * BB4[n] + *(PTR_A5 + 5) * BB5[n] + *(PTR_A5 + 6) * BB6[n] + *(PTR_A5 + 7) * BB7[n]);
+                        CC6[n] += alpha * (*(PTR_A6)*BB0[n] + *(PTR_A6 + 1) * BB1[n] + *(PTR_A6 + 2) * BB2[n] + *(PTR_A6 + 3) * BB3[n] + *(PTR_A6 + 4) * BB4[n] + *(PTR_A6 + 5) * BB5[n] + *(PTR_A6 + 6) * BB6[n] + *(PTR_A6 + 7) * BB7[n]);
+                        CC7[n] += alpha * (*(PTR_A7)*BB0[n] + *(PTR_A7 + 1) * BB1[n] + *(PTR_A7 + 2) * BB2[n] + *(PTR_A7 + 3) * BB3[n] + *(PTR_A7 + 4) * BB4[n] + *(PTR_A7 + 5) * BB5[n] + *(PTR_A7 + 6) * BB6[n] + *(PTR_A7 + 7) * BB7[n]);
+
+                        CC8[n] += alpha * (*(PTR_A8)*BB0[n] + *(PTR_A8 + 1) * BB1[n] + *(PTR_A8 + 2) * BB2[n] + *(PTR_A8 + 3) * BB3[n] + *(PTR_A8 + 4) * BB4[n] + *(PTR_A8 + 5) * BB5[n] + *(PTR_A8 + 6) * BB6[n] + *(PTR_A8 + 7) * BB7[n]);
+                        CC9[n] += alpha * (*(PTR_A9)*BB0[n] + *(PTR_A9 + 1) * BB1[n] + *(PTR_A9 + 2) * BB2[n] + *(PTR_A9 + 3) * BB3[n] + *(PTR_A9 + 4) * BB4[n] + *(PTR_A9 + 5) * BB5[n] + *(PTR_A9 + 6) * BB6[n] + *(PTR_A9 + 7) * BB7[n]);
+                        CC10[n] += alpha * (*(PTR_A10)*BB0[n] + *(PTR_A10 + 1) * BB1[n] + *(PTR_A10 + 2) * BB2[n] + *(PTR_A10 + 3) * BB3[n] + *(PTR_A10 + 4) * BB4[n] + *(PTR_A10 + 5) * BB5[n] + *(PTR_A10 + 6) * BB6[n] + *(PTR_A10 + 7) * BB7[n]);
+                        CC11[n] += alpha * (*(PTR_A11)*BB0[n] + *(PTR_A11 + 1) * BB1[n] + *(PTR_A11 + 2) * BB2[n] + *(PTR_A11 + 3) * BB3[n] + *(PTR_A11 + 4) * BB4[n] + *(PTR_A11 + 5) * BB5[n] + *(PTR_A11 + 6) * BB6[n] + *(PTR_A11 + 7) * BB7[n]);
+
+                        CC12[n] += alpha * (*(PTR_A12)*BB0[n] + *(PTR_A12 + 1) * BB1[n] + *(PTR_A12 + 2) * BB2[n] + *(PTR_A12 + 3) * BB3[n] + *(PTR_A12 + 4) * BB4[n] + *(PTR_A12 + 5) * BB5[n] + *(PTR_A12 + 6) * BB6[n] + *(PTR_A12 + 7) * BB7[n]);
+                        CC13[n] += alpha * (*(PTR_A13)*BB0[n] + *(PTR_A13 + 1) * BB1[n] + *(PTR_A13 + 2) * BB2[n] + *(PTR_A13 + 3) * BB3[n] + *(PTR_A13 + 4) * BB4[n] + *(PTR_A13 + 5) * BB5[n] + *(PTR_A13 + 6) * BB6[n] + *(PTR_A13 + 7) * BB7[n]);
+                        CC14[n] += alpha * (*(PTR_A14)*BB0[n] + *(PTR_A14 + 1) * BB1[n] + *(PTR_A14 + 2) * BB2[n] + *(PTR_A14 + 3) * BB3[n] + *(PTR_A14 + 4) * BB4[n] + *(PTR_A14 + 5) * BB5[n] + *(PTR_A14 + 6) * BB6[n] + *(PTR_A14 + 7) * BB7[n]);
+                        CC15[n] += alpha * (*(PTR_A15)*BB0[n] + *(PTR_A15 + 1) * BB1[n] + *(PTR_A15 + 2) * BB2[n] + *(PTR_A15 + 3) * BB3[n] + *(PTR_A15 + 4) * BB4[n] + *(PTR_A15 + 5) * BB5[n] + *(PTR_A15 + 6) * BB6[n] + *(PTR_A15 + 7) * BB7[n]);
+
+
+                    }//N             
             }//M
+            for (Nd4jLong m = M_L; m < M; m++) {
+                Nd4jLong OFF_A = m * aStride_M;
+                const T1* __restrict PTR_A0 = &(AA[OFF_A]);
+                T3* __restrict CC0 = &(C[m * cStride_M]);
+
+                PRAGMA_OMP_SIMD
+                for (Nd4jLong n = 0; n < N; n++) {
+                        CC0[n] += alpha * (*(PTR_A0)*BB0[n] + *(PTR_A0 + 1) * BB1[n] + *(PTR_A0 + 2) * BB2[n] + *(PTR_A0 + 3) * BB3[n] + *(PTR_A0 + 4) * BB4[n] + *(PTR_A0 + 5) * BB5[n] + *(PTR_A0 + 6) * BB6[n] + *(PTR_A0 + 7) * BB7[n]);
+                }//N             
+            }//M
+
         }//K
+
+
         for (Nd4jLong k = K_L; k < K; k++) {
             const T2* __restrict BB0 = &(B[k * bStride_K]);
             const T1* __restrict AA = &(A[k * 1]);
 
-            for (Nd4jLong m = 0; m < M_L; m += 8) {
+            for (Nd4jLong m = 0; m < M_L; m += 16) {
                 Nd4jLong OFF_A = m * aStride_M;
-                T1 AA0 = alpha * AA[OFF_A];
-                T1 AA1 = alpha * AA[OFF_A + aStride_M];
-                T1 AA2 = alpha * AA[OFF_A + 2 * aStride_M];
-                T1 AA3 = alpha * AA[OFF_A + 3 * aStride_M];
-                T1 AA4 = alpha * AA[OFF_A + 4 * aStride_M];
-                T1 AA5 = alpha * AA[OFF_A + 5 * aStride_M];
-                T1 AA6 = alpha * AA[OFF_A + 6 * aStride_M];
-                T1 AA7 = alpha * AA[OFF_A + 7 * aStride_M];
+                T1 A0 = alpha * AA[OFF_A];
+                T1 A1 = alpha * AA[OFF_A + aStride_M];
+                T1 A2 = alpha * AA[OFF_A + 2 * aStride_M];
+                T1 A3 = alpha * AA[OFF_A + 3 * aStride_M];
+                T1 A4 = alpha * AA[OFF_A + 4 * aStride_M];
+                T1 A5 = alpha * AA[OFF_A + 5 * aStride_M];
+                T1 A6 = alpha * AA[OFF_A + 6 * aStride_M];
+                T1 A7 = alpha * AA[OFF_A + 7 * aStride_M];
+                T1 A8 = alpha * AA[OFF_A + 8 * aStride_M];
+                T1 A9 = alpha * AA[OFF_A + 9 * aStride_M];
+                T1 A10 = alpha * AA[OFF_A + 10 * aStride_M];
+                T1 A11 = alpha * AA[OFF_A + 11 * aStride_M];
+                T1 A12 = alpha * AA[OFF_A + 12 * aStride_M];
+                T1 A13 = alpha * AA[OFF_A + 13 * aStride_M];
+                T1 A14 = alpha * AA[OFF_A + 14 * aStride_M];
+                T1 A15 = alpha * AA[OFF_A + 15 * aStride_M];
 
                 T3* __restrict CC0 = &(C[m * cStride_M]);
                 T3* __restrict CC1 = &(C[m * cStride_M + cStride_M]);
@@ -174,18 +139,37 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
                 T3* __restrict CC6 = &(C[m * cStride_M + 6 * cStride_M]);
                 T3* __restrict CC7 = &(C[m * cStride_M + 7 * cStride_M]);
 
+                T3* __restrict CC8 = &(C[m * cStride_M + 8 * cStride_M]);
+                T3* __restrict CC9 = &(C[m * cStride_M + 9 * cStride_M]);
+                T3* __restrict CC10 = &(C[m * cStride_M + 10 * cStride_M]);
+                T3* __restrict CC11 = &(C[m * cStride_M + 11 * cStride_M]);
+
+                T3* __restrict CC12 = &(C[m * cStride_M + 12 * cStride_M]);
+                T3* __restrict CC13 = &(C[m * cStride_M + 13 * cStride_M]);
+                T3* __restrict CC14 = &(C[m * cStride_M + 14 * cStride_M]);
+                T3* __restrict CC15 = &(C[m * cStride_M + 15 * cStride_M]);
+
                 PRAGMA_OMP_SIMD
                     for (Nd4jLong n = 0; n < N; n++) {
-                        //  nd4j_printf("%p %lf %lf %lf \n", &(CC[n]),CC[n], AA0, BB[n]);
-                        CC0[n] += AA0 * BB0[n];
-                        CC1[n] += AA1 * BB0[n];
-                        CC2[n] += AA2 * BB0[n];
-                        CC3[n] += AA3 * BB0[n];
-                        CC4[n] += AA4 * BB0[n];
-                        CC5[n] += AA5 * BB0[n];
-                        CC6[n] += AA6 * BB0[n];
-                        CC7[n] += AA7 * BB0[n];
-                    }//N
+
+                        CC0[n] += A0 * BB0[n];
+                        CC1[n] += A1 * BB0[n];
+                        CC2[n] += A2 * BB0[n];
+                        CC3[n] += A3 * BB0[n];
+                        CC4[n] += A4 * BB0[n];
+                        CC5[n] += A5 * BB0[n];
+                        CC6[n] += A6 * BB0[n];
+                        CC7[n] += A7 * BB0[n];
+                        CC8[n] += A8 * BB0[n];
+                        CC9[n] += A9 * BB0[n];
+                        CC10[n] += A10 * BB0[n];
+                        CC11[n] += A11 * BB0[n];
+                        CC12[n] += A12 * BB0[n];
+                        CC13[n] += A13 * BB0[n];
+                        CC14[n] += A14 * BB0[n];
+                        CC15[n] += A15 * BB0[n];
+
+                    }//N             
             }//M
 
             for (Nd4jLong m = M_L; m < M; m++) {
@@ -196,9 +180,9 @@ static void inner_gemm_no_checks(const Nd4jLong M, const Nd4jLong N, const Nd4jL
 
 
                 PRAGMA_OMP_SIMD
-                    for (Nd4jLong n = 0; n < N; n++) {
+                for (Nd4jLong n = 0; n < N; n++) {
                         CC[n] += AA0 * BB0[n];
-                    }//N
+                }//N
             }//M
         }//K
     }
