@@ -55,7 +55,7 @@ int bnch_cases[][5] = {
 template <typename T>
 int test() {
 
-	char out_orders[] = { 'c' };// , 'f' };
+	char out_orders[] = { 'c'   , 'f' };
 	double alpha = 1.0;
 	double betax[] = { 0.0,1.0 };
 

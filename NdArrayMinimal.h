@@ -1,5 +1,6 @@
 #pragma once
 #include "NDX.h"
+#include <numeric>
 namespace sd {
 
     struct ShapeUtils {
@@ -73,7 +74,37 @@ namespace sd {
             return vector;
         }
 
+        static FORCEINLINE  std::vector<int>  evalDimsToExclude(const int rank, const int dimsLen, const int* dimensions) {
 
+            std::vector<int> newDimensions;
+            if (dimsLen == 0) {                          // if input vector is empty then return whole shape range
+                newDimensions.resize(rank);
+                std::iota(newDimensions.begin(), newDimensions.end(), 0);   // fill with 0, 1, ... rank-1
+            }
+            else {
+                bool isAbsent;
+                for (int i = 0; i < rank; ++i) {
+                    isAbsent = true;
+                    for (int j = 0; j < dimsLen; ++j) {
+                        int dim = dimensions[j] >= 0 ? dimensions[j] : dimensions[j] + rank;
+                        if (i == dim) {
+                            isAbsent = false;
+                            break;
+                        }
+                    }
+                    if (isAbsent)
+                        newDimensions.emplace_back(i);
+                }
+            }
+
+            return newDimensions;
+        }
+
+        //////////////////////////////////////////////////////////////////////////
+        static FORCEINLINE   std::vector<int>  evalDimsToExclude(const int rank, const std::vector<int>& dimensions) {
+
+            return ShapeUtils::evalDimsToExclude(rank, dimensions.size(), dimensions.data());
+        }
 
         static FORCEINLINE  std::vector<int> evalBroadcastBackwardAxis(const Nd4jLong* operandShapeInfo, const Nd4jLong* resultShapeInfo) {
             // rRank >= oRank always  !!

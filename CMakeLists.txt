@@ -17,9 +17,14 @@ endif(AURORA_BUILD)
 
     set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp")
 project ("minimal_nd"  VERSION ${VERSION} LANGUAGES C CXX)
-add_executable (minimal_nd "main.cpp" "user_codes.cpp"  ${EXTRAS}  )
+add_executable (minimal_nd "main.cpp" "user_codes.cpp"  ${EXTRAS}   "reference.cpp")
 target_include_directories(minimal_nd PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
   
-add_executable (minimal_nd2 "main.cpp" "user_codes2.cpp"  ${EXTRAS}  )
+add_executable (minimal_nd2 "main.cpp" "user_codes2.cpp"  ${EXTRAS} "reference.cpp"   )
 target_include_directories(minimal_nd2 PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
 # TODO: Add tests and install targets if needed.
+add_executable (minimal_nd3 "main.cpp"  ${EXTRAS}   "user_codes3.cpp"  "reference.cpp")
+target_include_directories(minimal_nd3 PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
+
+add_executable (minimal_orig "main.cpp"  ${EXTRAS}   "original.cpp"  "reference.cpp")
+target_include_directories(minimal_orig PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
