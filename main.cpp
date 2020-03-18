@@ -129,11 +129,51 @@ int test() {
 	return 0;
 }
  
+ 
+int test2() {
+
+	const int bS = 4;
+	const int K = 3;
+	const int N = 4;
+	double alpha = 1.0;
+	double beta = 0.0;
+	auto input = NDArrayFactory::create<double>('c', { bS,  K, N });
+	auto weights = NDArrayFactory::create<double>('c', { 3 * K, K });
+	auto c_ref = NDArrayFactory::create<double>('c', { bS,  3 * K, N });
+
+	auto c_actual = NDArrayFactory::create<double>('c', { bS,3*K,N });
+	fill_matrice_lastC<double>(input, nullptr);
+	fill_matrice_lastC<double>(weights, nullptr);
+	fill_matrice_lastC<double>(c_actual, nullptr, true);
+	auto inputs_kn = input.subarray({ NDIndex::point(0) , NDIndex::all(), NDIndex::all() }); 
+ 
+	inputs_kn.reshapei({ K,N });
+
+	auto ptr_c_mn = mmulMxM(&weights, &inputs_kn, nullptr, alpha, beta, 'c');
+	fill_matrice_lastC<double>(c_ref, ptr_c_mn);
+	 
+	batchedGemm3<double, double, double>(&weights, &input, &c_actual, alpha, beta, 'c');
+ 
+	weights.printIndexedBuffer("weights");
+	input.printIndexedBuffer("input");
+	//result->printShapeInfo("result shape");
+	c_ref.printIndexedBuffer("result buffer");
+	c_actual.printIndexedBuffer("actual buffer"); 
+
+	delete ptr_c_mn;
+ 
+	return 0;
+}
+
 
 int main()
 {
+#if 1
+	test2();
+#else
 	test<float>();
 	test<double>();
+#endif
 #if 0
 	int x;
 	std::cin >> x;

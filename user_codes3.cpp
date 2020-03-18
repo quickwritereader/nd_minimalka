@@ -230,12 +230,8 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     const T3 betaZ = beta;
 
     const bool betaPersent = beta;
-
-
     const Nd4jLong* cShapeInfo = vC->getShapeInfo();
-
     const Nd4jLong* bases = &(cShapeInfo[1]);
-
     Nd4jLong* aStrides = vA->stridesOf();
     Nd4jLong* bStrides = vB->stridesOf();
     const Nd4jLong* cStrides = vC->stridesOf();
@@ -245,20 +241,9 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     const int aRank = vA->rankOf();
     const int bRank = vB->rankOf();
     const int cRank = vC->rankOf();
-    if (aRank == 2) {
-        aStrides = (Nd4jLong*)&zero_strides;
-    }
-    if (bRank == 2) {
-        bStrides = (Nd4jLong*)&zero_strides;
-    }
 
     int max_rank = aRank > bRank ? aRank : bRank;
     max_rank = max_rank > cRank ? max_rank : cRank;
-
-    //Nd4jLong batch_len = 1;
-    //for (int i = 0; i < max_rank - 2; i++) {
-    //    batch_len *= bases[i];
-    //}
 
     const int M = vA->sizeAt(aRank - 2);
     const int K = vA->sizeAt(aRank - 1);
@@ -269,6 +254,14 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     Nd4jLong bStride_N = bStrides[bRank - 1];
     Nd4jLong cStride_M = cStrides[cRank - 2];
     Nd4jLong cStride_N = cStrides[cRank - 1];
+
+    if (aRank == 2) {
+        aStrides = (Nd4jLong*)&zero_strides;
+    }
+    if (bRank == 2) {
+        bStrides = (Nd4jLong*)&zero_strides;
+    }
+
 
     Nd4jLong coords[MAX_RANK] = {};
     Nd4jLong* ptr_coords = (Nd4jLong*)&coords;

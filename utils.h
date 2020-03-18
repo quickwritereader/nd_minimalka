@@ -148,7 +148,7 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 	T max_diff =(T) 0;
 			for (size_t i = 0; i < t; i++) {
 				T diff = std::abs(buff1[offset.first] - buff2[offset.second]);
-#if 1
+#if 0
 				  if (diff > abs_err) {
 					fprintf(stderr, "[");
 					for (int i = 0; i < rank - 1; i++) {

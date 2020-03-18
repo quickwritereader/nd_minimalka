@@ -384,7 +384,7 @@ static FORCEINLINE void scal_buffer(const T3 beta, T3* C_PTR, int M, int N) {
 
 template<typename T3>
 void copy_buffer(T3* dest, T3* source, T3 betaZ, int M, int N, Nd4jLong dest_stride_m, Nd4jLong dest_stride_n) {
-    if (dest_stride_n == 1 && dest_stride_m == N) {
+    if (dest_stride_n == 1 && dest_stride_m == N  ) {
         int M_8 = M & (-8);
 
         if ((bool)betaZ) {
@@ -531,6 +531,7 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     Nd4jLong zero_strides[MAX_RANK] = {}; //zero strides
     const T1 alphaA = (T1)alpha;
     const T3 betaZ = (T3)beta;
+
     const Nd4jLong* cShapeInfo = vC->getShapeInfo();
     const Nd4jLong* bases = &(cShapeInfo[1]);
     Nd4jLong* aStrides = vA->stridesOf();
@@ -542,6 +543,19 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     const int aRank = vA->rankOf();
     const int bRank = vB->rankOf();
     const int cRank = vC->rankOf();
+
+    int max_rank = cRank;
+
+    const int M = vA->sizeAt(aRank - 2);
+    const int K = vA->sizeAt(aRank - 1);
+    const int N = vC->sizeAt(cRank - 1);
+    Nd4jLong aStride_M = aStrides[aRank - 2];
+    Nd4jLong aStride_K = aStrides[aRank - 1];
+    Nd4jLong bStride_K = bStrides[bRank - 2];
+    Nd4jLong bStride_N = bStrides[bRank - 1];
+    Nd4jLong cStride_M = cStrides[cRank - 2];
+    Nd4jLong cStride_N = cStrides[cRank - 1];
+
     if (aRank == 2) {
         aStrides = (Nd4jLong*)&zero_strides;
     }
@@ -549,18 +563,6 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
         bStrides = (Nd4jLong*)&zero_strides;
     }
 
-    int max_rank = aRank > bRank ? aRank : bRank;
-    max_rank = max_rank > cRank ? max_rank : cRank;
-
-    const int M = vA->sizeAt(aRank - 2);
-    const int K = vA->sizeAt(aRank - 1);
-    const int N = vC->sizeAt(cRank - 1);
-    Nd4jLong aStride_M = aStrides[aRank - 2];
-    Nd4jLong aStride_K = aStrides[aRank - 1];
-    Nd4jLong bStride_K = bStrides[aRank - 2];
-    Nd4jLong bStride_N = bStrides[aRank - 1];
-    Nd4jLong cStride_M = cStrides[cRank - 2];
-    Nd4jLong cStride_N = cStrides[cRank - 1];
 
     Nd4jLong coords[MAX_RANK] = {};
     Nd4jLong* ptr_coords = (Nd4jLong*)&coords;
@@ -574,15 +576,15 @@ static void parallel_batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray*
     bool out_order_f = cStride_M < cStride_N;
     T3* __restrict C_PTR_ORIG = C;
     bool allocate_buffer = out_order_f || cStride_N != 1;
-
+#if 0
+    if (cStride_N == 1)  allocate_buffer = true;
+#endif
     if (allocate_buffer) {
         C_PTR_ORIG = new T3[M * N];
     }
-#if 0
-    allocate_buffer = false;
-#endif
-    if (allocate_buffer) {
 
+    if (allocate_buffer) {
+        //printf("---\n");
         for (Nd4jLong i = 0; i < loop; i++) {
             zero_buffer(C_PTR_ORIG, M, N);
             inner_gemm_no_checks(M, N, K, alphaA, &(A[offset.first]), aStride_M, aStride_K, &(B[offset.second]), bStride_K, bStride_N, C_PTR_ORIG, N);
@@ -615,16 +617,9 @@ void batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,
     const Nd4jLong* cShapeInfo = vC->getShapeInfo();
 
     const Nd4jLong* bases = &(cShapeInfo[1]);
-
-
-    const int aRank = vA->rankOf();
-    const int bRank = vB->rankOf();
-    const int cRank = vC->rankOf();
-
-    int max_rank = aRank > bRank ? aRank : bRank;
-    max_rank = max_rank > cRank ? max_rank : cRank;
-
+    const int max_rank = vC->rankOf();
     Nd4jLong batch_len = 1;
+
     for (int i = 0; i < max_rank - 2; i++) {
         batch_len *= bases[i];
     }
