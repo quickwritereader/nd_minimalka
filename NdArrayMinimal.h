@@ -1680,6 +1680,9 @@ namespace sd {
             return canReshape;
         }
 
+
+        
+
         template <typename T, typename R>
         FORCEINLINE R templatedGet(void* buffer, Nd4jLong index) const {
             auto b = reinterpret_cast<T*>(buffer);

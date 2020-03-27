@@ -81,7 +81,7 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 				//1 time
 				for (size_t j = 0; j < M; j++) {
 					for (size_t n_i = 0; n_i < N; n_i++) {
-						x[j * stride_m + n_i * stride_n] =   dis(gen) + (T)0.5;
+						x[j * stride_m + n_i * stride_n] =   dis(gen) + (T)0.3;
 						//nd4j_printf("%lf  %ld  %ld %ld\n", x[j * stride_n + n_i], stride_n,j,n_i);
 					}
 				}
@@ -126,7 +126,7 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
 	Nd4jLong* shapeInfo2 = arr2.getShapeInfo();
 	Nd4jLong* strides = arr.stridesOf();
-	Nd4jLong* strides2 = arr.stridesOf();
+	Nd4jLong* strides2 = arr2.stridesOf();
 	Nd4jLong rank = shapeInfo[0];
 	T *buff1 = arr.bufferAsT<T>();
 	T* buff2 = arr2.bufferAsT<T>();
@@ -160,6 +160,6 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 				max_diff = std::max(max_diff,diff  );
 				offset = sd::inc_coords(bases, strides,strides2, coords, offset,rank);
 			}
-			fprintf(stderr, "max difference %.9g \n", max_diff);
+			fprintf(stdout, "max difference %.9g \n", max_diff);
 	return max_diff>abs_err;
 }

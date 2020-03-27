@@ -5,7 +5,7 @@ using namespace sd;
 
 template <typename T1, typename T2, typename T3>
 void batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,
-    const T1 alpha, const T3 beta, char out_order) {
+    const T1 alpha, const T3 beta, char out_order, const bool transA, const bool transB) {
 
 
     const int aRank = vA->rankOf();
@@ -99,5 +99,5 @@ void batchedGemm3(const NDArray* vA, const NDArray* vB, NDArray* vC,
 
 
 
-template void batchedGemm3<float, float, float>(const NDArray* vA, const NDArray* vB, NDArray* vC, const float alpha, const float beta, char out_order);
-template void batchedGemm3<double, double, double>(const NDArray* vA, const NDArray* vB, NDArray* vC, const double alpha, const double beta, char out_order);
+template void batchedGemm3<float, float, float>(const NDArray* vA, const NDArray* vB, NDArray* vC, const float alpha, const float beta, char out_order,  const bool transA  , const bool transB );
+template void batchedGemm3<double, double, double>(const NDArray* vA, const NDArray* vB, NDArray* vC, const double alpha, const double beta, char out_order, const bool transA  , const bool transB );

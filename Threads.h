@@ -185,20 +185,19 @@ namespace samediff {
         static int  parallel_aligned_increment(FUNC_1D function, int64_t start, int64_t stop, int64_t increment, bool adjust = true,size_t type_size = sizeof(float), uint32_t req_numThreads = sd::Environment::getInstance()->maxMasterThreads());
 
 
-        template<typename Op  >
-        static int   parallel_aligned_increment2(Op op, int64_t start, int64_t stop, int64_t increment ) {
+        template<typename Op>
+        static int   parallel_aligned_increment2(Op function, int64_t start, int64_t stop, int64_t increment, bool adjust = true, size_t type_size = sizeof(float), uint32_t req_numThreads = sd::Environment::getInstance()->maxMasterThreads()) {
             if (start > stop)
                 throw std::runtime_error("Threads::parallel_for got start > stop");
             auto num_elements = (stop - start);
             //this way we preserve increment starts offset
             //so we will parition considering delta but not total elements
             auto delta = (stop - start) / increment;
-            int req_numThreads = 8;
-            int type_size = 1;
+
 
             // in some cases we just fire func as is
             if (delta == 0 || req_numThreads == 1) {
-                op(0, start, stop, increment );
+                function(0, start, stop, increment);
                 return 1;
             }
             int numThreads = 0;
@@ -207,7 +206,6 @@ namespace samediff {
                 Nd4jLong start;
                 Nd4jLong end;
             };
-
 #ifdef __NEC__
             constexpr int max_thread_count = 8;
 #else
@@ -220,14 +218,14 @@ namespace samediff {
 #ifdef __NEC__
             int adjusted_numThreads = max_thread_count;
 #else
-            int adjusted_numThreads = (!false) ? req_numThreads : samediff::ThreadsHelper::numberOfThreads(req_numThreads, (num_elements * sizeof(double)) / (200 * type_size));
+            int adjusted_numThreads = (!adjust) ? req_numThreads : samediff::ThreadsHelper::numberOfThreads(req_numThreads, (num_elements * sizeof(double)) / (200 * type_size));
 #endif
 
             if (adjusted_numThreads > delta)
                 adjusted_numThreads = delta;
             // shortcut
             if (adjusted_numThreads <= 1) {
-                op(0, start, stop, increment );
+                function(0, start, stop, increment);
                 return 1;
             }
 
@@ -281,7 +279,7 @@ namespace samediff {
 #if 0
             nd4j_printf("use#1 %d free %d\n", numThreads, _nFreeThreads);
 #endif
-            if (true /*tryAcquire(numThreads)*/) {
+            if (tryAcquire(numThreads)) {
 #if 0
                 nd4j_printf("use#2 %d free %d\n", numThreads, _nFreeThreads);
 #endif
@@ -294,20 +292,22 @@ namespace samediff {
 #if 0
                     nd4j_printf("use#inner span %ld   %ld\n", thread_spans[j].start, thread_spans[j].end);
 #endif
-                    op(j, thread_spans[j].start, thread_spans[j].end, increment );
-                }
-               // freeThreads(numThreads);
+                    function(j, thread_spans[j].start, thread_spans[j].end, increment);
+        }
+                freeThreads(numThreads);
                 return numThreads;
-            }
+    }
             else {
 #if 0
                 nd4j_printf("use#3 %d free %d\n", 1, _nFreeThreads);
 #endif
-                op(0, start, stop, increment );
+                function(0, start, stop, increment);
                 // we tell that parallelism request declined
                 return 1;
             }
-        }
+
+    }
+
     };
 }
 

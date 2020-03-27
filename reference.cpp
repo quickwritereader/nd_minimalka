@@ -15,7 +15,7 @@ void usualGemm(const NDArray* vA, const NDArray* vB, NDArray* vC,
     T3* C = vC->bufferAsT<T3>();
 
     const T3 alphaZ = (T3)alpha;
-    const T3 betaZ = (T3)beta;
+    const T3 betaZ  = (T3)beta;
 
     const bool betaPersent = beta;
 
@@ -73,24 +73,31 @@ void usualGemm(const NDArray* vA, const NDArray* vB, NDArray* vC,
 
 
 
-NDArray* mmulMxM(const NDArray* A, const NDArray* B, NDArray* C, const double alpha, const double beta, const char outOrder) {
+NDArray* mmulMxM(const NDArray* A, const NDArray* B, NDArray* C, const double alpha, const double beta, const char outOrder, const bool transA  , const bool transB  ) {
 
     if (A->rankOf() != 2)
         throw std::runtime_error("MmulHelper::mmulMxM: rank of A array is not equal 2 !");
     if (B->rankOf() != 2)
         throw std::runtime_error("MmulHelper::mmulMxM: rank of B array is not equal 2 !");
 
-    const auto M = A->sizeAt(0);
-    const auto K = A->sizeAt(1);
-    const auto N = B->sizeAt(1);
+    const int aMaxis = transA ? 1 : 0;
+    const int aKaxis = transA ? 0 : 1;
+    const int bKaxis = transB ? 1 : 0;
+    const int bNaxis = transB ? 0 : 1;
+    const int cMaxis = 0;
+    const int cNaxis = 1;
+
+    const auto M = A->sizeAt(aMaxis);
+    const auto K = A->sizeAt(aKaxis);
+    const auto N = B->sizeAt(bNaxis);
 
     if (C != nullptr && C->rankOf() != 2)
         throw std::runtime_error("MmulHelper::mmulMxM: rank of C array is not equal 2 !");
-    if (B->sizeAt(0) != K)
+    if (B->sizeAt(bKaxis) != K)
         throw std::runtime_error("MmulHelper::mmulMxM: B array has wrong number of rows !");
-    if (C != nullptr && C->sizeAt(0) != M)
+    if (C != nullptr && C->sizeAt(cMaxis) != M)
         throw std::runtime_error("MmulHelper::mmulMxM: C array has wrong number of rows !");
-    if (C != nullptr && C->sizeAt(1) != N)
+    if (C != nullptr && C->sizeAt(cNaxis) != N)
         throw std::runtime_error("MmulHelper::mmulMxM: C array has wrong number of columns !");
     const auto aType = A->dataType();
     const auto bType = B->dataType();
@@ -116,15 +123,20 @@ NDArray* mmulMxM(const NDArray* A, const NDArray* B, NDArray* C, const double al
     if (C->isEmpty())
         return C;
 
+ 
+
+
 
     if (typeFloat) {
         //fprintf(stdout, "-gemm-float--\n");
-        usualGemm<float, float, float>(A, B, C, 0, 1, 0, 1, 0, 1, alpha, beta);
+        usualGemm<float, float, float>(A, B, C , aMaxis, aKaxis, bKaxis, bNaxis, cMaxis, cNaxis ,alpha, beta);
     }
     else {
         //fprintf(stdout, "-gemm-double--\n");
-        usualGemm<double, double, double>(A, B, C, 0, 1, 0, 1, 0, 1, alpha, beta);
+        usualGemm<double, double, double>(A, B, C, aMaxis, aKaxis, bKaxis, bNaxis, cMaxis, cNaxis, alpha, beta);
     }
+
+ 
 
     return C;
 }
