@@ -107,6 +107,8 @@ namespace sd {
                 Arm_TensorInfo info;
                 info.init(shape, numChannels, dType, strides, 0, total_size);
                 info.set_data_layout(layout);
+                auto padding = info.padding();
+                std::cout << padding.top << "," << padding.bottom <<","<< padding.left <<","<< padding.right << std::endl;
                 // Import existing pointer as backing memory
                 Arm_Tensor tensor;
                 tensor.allocator()->init(info);

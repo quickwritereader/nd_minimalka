@@ -122,7 +122,21 @@ static inline void getSizesAndIndexesConv2d(const bool isNCHW, const int wFormat
     oW = outShapeInfo[indOoH + 2];                  // output width
 }
 
+void print_t(const Arm_Tensor& t, const char * msg) {
+    auto padding = t.info()->padding();
+    std::cout << msg<<"\ntotal: " << t.info()->total_size() << "\n";
+    
+    for (int i = 0; i < arm_compute::MAX_DIMS; i++) {
+        std::cout << t.info()->dimension(i) << ",";
+    }
+    std::cout << std::endl;
+    for (int i = 0; i < arm_compute::MAX_DIMS; i++) {
+        std::cout << t.info()->strides_in_bytes()[i] << ",";
+    }
+    std::cout << "\npadding: l " << padding.left << ", r " << padding.right <<", t "<< padding.top << ", b " << padding.bottom <<  std::endl;
+ 
 
+}
  
 
 bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
@@ -141,11 +155,104 @@ bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int
     nd4j_printf("-------maxPool---%d--\n", 0);
     auto in = getArmTensor(*input, data_layout); 
     auto out = getArmTensor(*output, data_layout); 
-    print_tensor(in, "In");
+
+
+    print_t(in,"in:");
+    print_t(out,"out:");
+
     pool.configure(&in, &out, maxPool);
+    print_tensor(in, "In");
     pool.run(); // run function
     print_tensor(out, "After Run: Out");
     return true;
+}
+
+
+
+bool pool2d_auto_tensor(int iW, int iH, int oW, int  oH, int iD, int bS, int kH, int kW, int sH, int sW, int pH
+    , int pW) {
+
+
+    nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d ", kH, kW, sH, sW, pH
+        , pW);
+    Arm_Tensor in{};
+    const Arm_TensorShape in_shape(iW, iH, iD, bS);
+    Arm_Tensor out{};
+    const Arm_TensorShape out_shape(oW, oH, iD, bS);
+    in.allocator()->init(Arm_TensorInfo(in_shape, 1, arm_compute::DataType::F32));
+    out.allocator()->init(Arm_TensorInfo(out_shape, 1, arm_compute::DataType::F32));
+
+    arm_compute::NEPoolingLayer pool;
+    auto data_layout = in.info()->data_layout();
+    auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), data_layout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
+    nd4j_printf("-------maxPool---%d--\n", 0);
+
+ 
+    pool.configure(&in, &out, maxPool);
+
+    in.allocator()->allocate();
+    out.allocator()->allocate();
+
+    print_t(in, "in ");
+    print_t(out, "out ");
+
+
+    print_tensor(in, "tensor In");
+    pool.run(); // run function
+    print_tensor(out, "tensor: Out");
+
+
+    return true;
+}
+
+void test0() {
+    const int bS = 2;
+    const int iD = 1;
+    const int iH = 24;
+    const int iW = 24;
+    const int kH = 3;
+    const int kW = 3;
+    const int sH = 1;
+    const int sW = 1;
+    const int pH = 0;
+    const int pW = 0;
+    const int dH = 1;
+    const int dW = 1;
+    const int oH = (iH - kH - (kH - 1) * (dH - 1) + 2 * pH) / sH + 1;     // output height
+    const int oW = (iW - kW - (kW - 1) * (dW - 1) + 2 * pW) / sW + 1;     // output width
+
+ 
+
+    pool2d_auto_tensor(iW, iH, oW, oH, iD, bS, kH, kW, sH, sW, pH, pW);
+ 
+}
+
+void test1() {
+    const int bS = 2;
+    const int iD = 1;
+    const int iH = 24;
+    const int iW = 24;
+    const int kH = 3;
+    const int kW = 3;
+    const int sH = 1;
+    const int sW = 1;
+    const int pH = 0;
+    const int pW = 0;
+    const int dH = 1;
+    const int dW = 1;
+    const int oH = (iH - kH - (kH - 1) * (dH - 1) + 2 * pH) / sH + 1;     // output height
+    const int oW = (iW - kW - (kW - 1) * (dW - 1) + 2 * pW) / sW + 1;     // output width
+
+ 
+    auto x = NDArrayFactory::create<float>('c', { bS,iD,iH,iW });
+    auto exp = NDArrayFactory::create<float>('c', { bS,iD,oH,oW });
+    auto out = NDArrayFactory::create<float>('c', { bS,iD,oH,oW });
+    fill_nd<float>(x, FILL_MODE::INC);
+
+
+    pool2d(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
+ 
+
 }
 
 void test2(const NDArray &input) {
@@ -178,6 +285,8 @@ void test_pool2() {
 
     fill_nd<float>(x, FILL_MODE::INC);
 
+
+
     pool2d(&x, &out, 2, 2, 2, 2, 0, 0, 1, 1, 0, 1);
 
     //exp.printIndexedBuffer("Expected");
@@ -187,8 +296,10 @@ void test_pool2() {
 
 int main()
 {
-    test_pool();
-    test_pool2();
+    test0();
+    test1();
+    //test_pool();
+    //test_pool2();
  
 	return 0;
 }
