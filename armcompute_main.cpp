@@ -187,15 +187,8 @@ void test_pool2() {
 
 int main()
 {
-   // test_pool();
+    test_pool();
     test_pool2();
-	////auto x = NDArrayFactory::create<float>('c', { 4,4, 8,8 });
-	//// fill_nd<float>(x,FILL_MODE::INC);
-	////test2(x);
-	//std::cout << "______________________" << std::endl;
-	//auto y = NDArrayFactory::create<float>('f', { 4,4, 8,8 });
-	//fill_nd<float>(y, FILL_MODE::INC);
-	//test2(y);
-	////test<float>();
+ 
 	return 0;
 }
