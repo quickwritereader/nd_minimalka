@@ -117,6 +117,50 @@ void fill_matrice_lastC(sd::NDArray& arr, sd::NDArray* fill = nullptr, bool zero
 	}
 }
 
+enum class FILL_MODE {
+	ZERO,
+	RANDOM,
+	INC
+};
+
+template<typename T>
+void fill_nd(sd::NDArray& arr,FILL_MODE mode=FILL_MODE::RANDOM) {
+	Nd4jLong coords[MAX_RANK] = {}; 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	//for floats
+	std::uniform_real_distribution<T> dis((T)0.0, (T)1.9);
+	T* x = arr.bufferAsT<T>();
+	Nd4jLong* shapeInfo = arr.getShapeInfo();
+	Nd4jLong* strides = arr.stridesOf();
+	Nd4jLong rank = shapeInfo[0];
+	Nd4jLong* bases = &(shapeInfo[1]); 
+
+	size_t t = 1;
+	for (size_t i = 0; i < rank; i++) {
+		t *= bases[i];
+	}
+	size_t offset = 0;
+
+	if (mode==FILL_MODE::ZERO) {
+		for (size_t i = 0; i < t; i++) {
+			x[offset] = 0;
+			offset = sd::inc_coords(bases, strides, coords, offset, rank);
+		}
+	}
+	else if(mode==FILL_MODE::RANDOM) {
+		for (size_t i = 0; i < t; i++) {
+			x[offset] = dis(gen) + (T)0.3;
+			offset = sd::inc_coords(bases, strides, coords, offset, rank);
+		}
+	}
+	else {  
+			for (size_t i = 0; i < t; i++) {
+				x[offset] = (T)i;
+				offset = sd::inc_coords(bases, strides, coords, offset, rank);
+			} 
+	}
+}
 
 
 template<typename T>
