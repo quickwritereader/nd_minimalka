@@ -122,21 +122,6 @@ static inline void getSizesAndIndexesConv2d(const bool isNCHW, const int wFormat
     oW = outShapeInfo[indOoH + 2];                  // output width
 }
 
-void print_t(const Arm_Tensor& t, const char * msg) {
-    auto padding = t.info()->padding();
-    std::cout << msg<<"\ntotal: " << t.info()->total_size() << "\n";
-    
-    for (int i = 0; i < arm_compute::MAX_DIMS; i++) {
-        std::cout << t.info()->dimension(i) << ",";
-    }
-    std::cout << std::endl;
-    for (int i = 0; i < arm_compute::MAX_DIMS; i++) {
-        std::cout << t.info()->strides_in_bytes()[i] << ",";
-    }
-    std::cout << "\npadding: l " << padding.left << ", r " << padding.right <<", t "<< padding.top << ", b " << padding.bottom <<  std::endl;
- 
-
-}
  
 
 bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
@@ -156,10 +141,7 @@ bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int
     auto in = getArmTensor(*input, data_layout); 
     auto out = getArmTensor(*output, data_layout); 
 
-
-    print_t(in,"in:");
-    print_t(out,"out:");
-
+ 
     pool.configure(&in, &out, maxPool);
     print_tensor(in, "In");
     pool.run(); // run function
@@ -167,6 +149,97 @@ bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int
     return true;
 }
 
+
+
+bool pool2d_b(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
+    , int pW, int dH, int dW, int paddingMode, int isNHWC = 0) {
+
+    bool isNCHW = !isNHWC;
+    nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d", kH, kW, sH, sW, pH
+        , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
+    input->printShapeInfo("input");
+
+
+    auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
+    auto inInfo  = getArmTensorInfo(*input, dataLayout);
+    auto outInfo = getArmTensorInfo(*output, dataLayout);
+
+    Arm_Tensor in{}; 
+    Arm_Tensor out{}; 
+    in.allocator()->init(inInfo);
+    out.allocator()->init(outInfo);
+
+    arm_compute::NEPoolingLayer pool;
+
+    auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), dataLayout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
+  
+    pool.configure(&in, &out, maxPool);
+
+    if (in.info()->has_padding()) {
+        //allocate and copy
+        in.allocator()->allocate();
+        //copy 
+        copyToTensor(*input,in);
+
+    }
+    else {
+        //import buffer
+        void* buff = input->getBuffer();
+        in.allocator()->import_memory(buff);
+    }
+    bool copyOut = false;
+    if (out.info()->has_padding()) {
+        //allocate and flag that we have to copy
+        out.allocator()->allocate();
+        copyOut = true;
+    }
+    else {
+        //import
+        void* buff = output->getBuffer();
+        out.allocator()->import_memory(buff);
+    }
+
+
+    print_tensor(in, "In");
+    pool.run(); // run function
+    print_tensor(out, "After Run: Out");
+    if (copyOut) {
+        //copy the result
+        copyFromTensor(out, *output);
+
+    }
+    output->printShapeInfo("output");
+    output->printIndexedBuffer("output");
+    return true;
+}
+
+
+
+
+
+bool pool2d_c(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
+    , int pW, int dH, int dW, int paddingMode, int isNHWC = 0) {
+
+    bool isNCHW = !isNHWC;
+    nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d", kH, kW, sH, sW, pH
+        , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
+    input->printShapeInfo("input");
+    input->printIndexedBuffer("input");
+
+    auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
+     
+    ArmFunction<arm_compute::NEPoolingLayer> pool;
+
+    auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), dataLayout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
+
+    pool.configure(input,output, dataLayout, maxPool);
+     
+    pool.run(); // run function
+  
+    output->printShapeInfo("output");
+    output->printIndexedBuffer("output");
+    return true;
+}
 
 
 bool pool2d_auto_tensor(int iW, int iH, int oW, int  oH, int iD, int bS, int kH, int kW, int sH, int sW, int pH
@@ -192,10 +265,7 @@ bool pool2d_auto_tensor(int iW, int iH, int oW, int  oH, int iD, int bS, int kH,
 
     in.allocator()->allocate();
     out.allocator()->allocate();
-
-    print_t(in, "in ");
-    print_t(out, "out ");
-
+     
 
     print_tensor(in, "tensor In");
     pool.run(); // run function
@@ -250,9 +320,9 @@ void test1() {
     fill_nd<float>(x, FILL_MODE::INC);
 
 
-    pool2d(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
- 
-
+    //pool2d(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
+    //pool2d_b(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
+    pool2d_c(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
 }
 
 void test2(const NDArray &input) {
@@ -291,12 +361,22 @@ void test_pool2() {
 
     //exp.printIndexedBuffer("Expected");
     out.printIndexedBuffer("out");
+    
 
 }
 
 int main()
 {
-    test0();
+    const int bS = 2;
+    const int iD = 1;
+    const int iH = 24;
+    const int iW = 24;
+    Arm_Tensor in{};
+    const Arm_TensorShape in_shape(iW, iH, iD, bS); 
+    in.allocator()->init(Arm_TensorInfo(in_shape, 1, arm_compute::DataType::F32));
+ 
+
+    //test0();
     test1();
     //test_pool();
     //test_pool2();

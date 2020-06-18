@@ -33,6 +33,7 @@
 #include <iostream>
 
  namespace sd{
+            
 
             using Arm_DataType = arm_compute::DataType;
             using Arm_Tensor = arm_compute::Tensor;
@@ -42,12 +43,70 @@
             using Arm_Strides = arm_compute::Strides;
  
             Arm_DataType getArmType(const sd::DataType& dType);
+
+            Arm_TensorInfo getArmTensorInfo(int rank, Nd4jLong* bases, sd::DataType ndArrayType, arm_compute::DataLayout layout = arm_compute::DataLayout::UNKNOWN);
+
+            Arm_TensorInfo getArmTensorInfo(const sd::NDArray& arr, arm_compute::DataLayout layout = arm_compute::DataLayout::UNKNOWN);
+
             Arm_Tensor getArmTensor(const sd::NDArray& arr, arm_compute::DataLayout layout = arm_compute::DataLayout::UNKNOWN);
 
-
+            void copyFromTensor(const Arm_Tensor& inTensor, sd::NDArray& output);
+            void copyToTensor(const sd::NDArray& input, Arm_Tensor& outTensor);
             void print_tensor(Arm_ITensor& tensor, const char* msg);
             bool isArmcomputeFriendly(const NDArray& arr);
 
+
+            template<typename F>
+            class ArmFunction {
+            public:
+
+               template<typename ...Args>
+               void configure(NDArray *input , NDArray *output, arm_compute::DataLayout layout, Args&& ...args) {
+                   
+                   auto inInfo = getArmTensorInfo(*input, layout);
+                   auto outInfo = getArmTensorInfo(*output, layout);  
+                   in.allocator()->init(inInfo);
+                   out.allocator()->init(outInfo);
+                   armFunction.configure(&in,&out,std::forward<Args>(args) ...);
+                   if (in.info()->has_padding()) {
+                       //allocate and copy
+                       in.allocator()->allocate();
+                       //copy 
+                       copyToTensor(*input, in);
+
+                   }
+                   else {
+                       //import buffer
+                       void* buff = input->getBuffer();
+                       in.allocator()->import_memory(buff);
+                   } 
+                   if (out.info()->has_padding()) {
+                       //store pointer to our array to copy after run
+                       out.allocator()->allocate();
+                       outNd = output;
+                   }
+                   else {
+                       //import
+                       void* buff = output->getBuffer();
+                       out.allocator()->import_memory(buff);
+                   }
+
+               }
+
+               void run() {
+                   armFunction.run();
+                   if (outNd) {
+                       copyFromTensor(out, *outNd);
+                   }
+               }
+
+               private:
+                   Arm_Tensor in;
+                   Arm_Tensor out;
+                   NDArray *outNd=nullptr;
+                   F armFunction{};
+            };
+             
             }
 
 #endif //DEV_TESTSARMCOMPUTEUTILS_H
