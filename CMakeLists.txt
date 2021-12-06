@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for batch_gemm, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.15)
 
 option(AURORA_BUILD "AURORA_BUILD")
 option(USE_ARMCOMPUTE "AURORA_BUILD")
@@ -35,9 +35,14 @@ if(SD_NEW)
     message("Adds Vednn into dependency projects using ExternalProject_Add")
     set(HAVE_VEDNN 1)
     include(ExternalProject)
-    set(VEDNN_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/vednn-install")
+    get_filename_component(MY_RESULT_ABSOLUTE_PATH_VAR
+                       "${CMAKE_CURRENT_BINARY_DIR}/vednn-install"
+                       ABSOLUTE)
+    set(VEDNN_PREFIX "${MY_RESULT_ABSOLUTE_PATH_VAR}")
+    message(${VEDNN_PREFIX})
     set(VEDNN_STATIC_LIB
         "${VEDNN_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}dnnl${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    message(${VEDNN_STATIC_LIB})
     if(SD_AURORA)
         set (BASH_CMD_VE  bash build.sh -aq$<$<CONFIG:Debug>:dddd>)
     else()
@@ -55,23 +60,23 @@ if(SD_NEW)
         BUILD_IN_SOURCE   1
         BUILD_COMMAND     ${VEDNN_BUILD_COMMAND}
         BUILD_BYPRODUCTS  ${VEDNN_STATIC_LIB}
-        INSTALL_COMMAND ""
+        INSTALL_COMMAND cmake -E echo "Skipping install step as its already inside build."
         )
  
     set(VEDNN_INCLUDE "${VEDNN_PREFIX}/include")
-    include_directories(${VEDNN_INCLUDE})
     list(APPEND EXTERNAL_DEPENDENCY_PROJECTS vednn_project)
-    list(APPEND EXTERNAL_DEPENDENCY_LIBS ${VEDNN_STATIC_LIB} )
-
-    set(target_name "vednn_check")
-    add_executable (${target_name} "vednn_new.cpp"  ${EXTRAS}  )
-    target_include_directories(${target_name} PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ${ARMCOMPUTE_INCLUDE})
-    target_link_libraries(${target_name}  ${EXTERNAL_DEPENDENCY_LIBS} )
+    list(APPEND EXTERNAL_DEPENDENCY_LIBS  ${VEDNN_STATIC_LIB} )
+    include_directories((${VEDNN_INCLUDE}))
+ 
+    add_executable (vednn_check "vednn_new.cpp"  ${EXTRAS}  )
+    message( ${EXTERNAL_DEPENDENCY_LIBS})
+    target_include_directories(vednn_check PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
     foreach(external_dependency ${EXTERNAL_DEPENDENCY_PROJECTS})
-        message("@external ${external_dependency}")
-        add_dependencies(${target_name} ${external_dependency})
-    endforeach()
-
+    message("@external ${external_dependency}")
+    add_dependencies(vednn_check ${external_dependency})
+   endforeach()
+    target_link_libraries(vednn_check ${EXTERNAL_DEPENDENCY_LIBS})
+ 
 
 else(SD_NEW)
 
