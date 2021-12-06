@@ -77,37 +77,7 @@
      if [ $DODEBUG -eq 0 ]; then
          CMAKEOPT="${CMAKEOPT} -DCMAKE_BUILD_TYPE=Release"
      elif [ $DODEBUG -eq 1 ]; then
-@@ -518,17 +526,18 @@
-         ccxx_flags -include stdint.h
-         ccxx_flags -minit-stack=zero
-         ccxx_flags -Wunknown-pragma
--        ccxx_flags -fdiag-inline=2
--        ccxx_flags -fdiag-vector=2
--        ccxx_flags -report-all
--        # -O4 early... when -O4 (or -O3) comes later, sometimes inlining does not happen
--        ccxx_flags -O3 -finline -finline-functions
--        # nc++-3.0.30 WILL NOT compile some files when -finline is specified:
--        #ccxx_flags -O3 -finline-functions
--        # nc++-3.0.30 has an ICE ** DO NOT USE IT **
--        ccxx_flags -finline-max-function-size=300
--        ccxx_flags -finline-max-depth=10
--        ccxx_flags -finline-max-times=20
-+        ccxx_flags -O0 -g
-+        # ccxx_flags -fdiag-inline=2
-+        # ccxx_flags -fdiag-vector=2
-+        # ccxx_flags -report-all
-+        # # -O4 early... when -O4 (or -O3) comes later, sometimes inlining does not happen
-+        # ccxx_flags -O3 -finline -finline-functions
-+        # # nc++-3.0.30 WILL NOT compile some files when -finline is specified:
-+        # #ccxx_flags -O3 -finline-functions
-+        # # nc++-3.0.30 has an ICE ** DO NOT USE IT **
-+        # ccxx_flags -finline-max-function-size=300
-+        # ccxx_flags -finline-max-depth=10
-+        # ccxx_flags -finline-max-times=20
-         if [ $DODEBUG -gt 0 ]; then
-             # in nc++-3.0.28 manual (but apparently not in nc++-3.0.27!)
-             : #ccxx_flags -traceback=verbose
-@@ -647,7 +656,7 @@
+@@ -647,7 +655,7 @@
  
          # adjust here for VE shared library and Openmp use
          #CMAKEOPT="${CMAKEOPT} -DUSE_SHAREDLIB=OFF" # deprecated
@@ -116,7 +86,7 @@
          #CMAKEOPT="${CMAKEOPT} -DDNNL_LIBRARY_TYPE=SHARED" # default
  
          # USE_OPENMP defaults to off, so force it on (VE openmp has improved)
-@@ -802,7 +811,7 @@
+@@ -802,7 +810,7 @@
      #        ve_validate_binary -d "${BUILDDIR}/${d}"
      #    done
      #fi
@@ -125,6 +95,11 @@
          echo "DOTARGET  $DOTARGET"
          echo "ISA       $ISA"
          echo "DOTEST    $DOTEST"
+@@ -1102,3 +1110,4 @@
+ # Return value is BUILDOK (so repeat-build scripts can stop on success)
+ if [ "${BUILDOK}" == "y" ]; then exit 0; fi
+ exit 1 # error
++
 --- src/cpu/simple_q10n.hpp	2021-12-06 04:44:23.166824100 +0400
 +++ src/cpu/simple_q10n_new.hpp	2021-12-06 08:07:01.116980900 +0400
 @@ -36,7 +36,7 @@
@@ -136,38 +111,4 @@
  #if DNNL_X64
      return _mm_cvtss_si32(_mm_load_ss(&f));
  #elif defined(__ve)
- --- Platform/Linux-GNU-C-aurora.cmake	2021-12-07 04:25:51.151111081 +0900
-+++ Platform/Linux-GNU-C-aurora_new.cmake	2021-12-07 04:27:08.789482562 +0900
-@@ -11,11 +11,11 @@
- #set(CMAKE_C_FLAGS_DEBUG_INIT "${CMAKE_C_FLAGS_DEBUG_INIT} -g2 -mretain-list-vector -O0")
- #set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "${CMAKE_C_FLAGS_RELWITHDEBINFO_INIT} -g2 -mretain-list-vector")
- # override...
--set(CMAKE_C_FLAGS_RELEASE_INIT "-O3 -DNDEBUG -mretain-list-vector")
--set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O3 -g2 -mretain-list-vector") # removed -DNDEBUG
--set(CMAKE_C_FLAGS_DEBUG_INIT "-O0 -g2 -mretain-list-vector")
-+# set(CMAKE_C_FLAGS_RELEASE_INIT "-O3 -DNDEBUG -mretain-list-vector")
-+# set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O3 -g2 -mretain-list-vector") # removed -DNDEBUG
-+# set(CMAKE_C_FLAGS_DEBUG_INIT "-O0 -g2 -mretain-list-vector")
- # -Os is not supported
--set(CMAKE_C_FLAGS_MINSIZEREL_INIT CMAKE_C_FLAGS_RELEASE_INIT)
-+# set(CMAKE_C_FLAGS_MINSIZEREL_INIT CMAKE_C_FLAGS_RELEASE_INIT)
  
- # UnixPaths.cmake adds these host-only locations:
- # ... so we'll remove them and use some VE paths ...
---- Platform/Linux-GNU-CXX-aurora.cmake	2021-12-07 04:33:09.747208083 +0900
-+++ Platform/Linux-GNU-CXX-aurora_new.cmake	2021-12-07 04:34:06.982481462 +0900
-@@ -13,10 +13,10 @@
- #set(CMAKE_CXX_FLAGS_DEBUG_INIT "${CMAKE_CXX_FLAGS_DEBUG_INIT} -g2 -mretain-list-vector -O0")
- #set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "${CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT} -g2 -mretain-list-vector")
- # override...
--set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O3 -DNDEBUG -mretain-list-vector")
--set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O3 -g2 -mretain-list-vector") # removed -DNDEBUG
--set(CMAKE_CXX_FLAGS_DEBUG_INIT "-O0 -g2 -mretain-list-vector")
--set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT CMAKE_CXX_FLAGS_RELEASE_INIT)
-+# set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O3 -DNDEBUG -mretain-list-vector")
-+# set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O3 -g2 -mretain-list-vector") # removed -DNDEBUG
-+# set(CMAKE_CXX_FLAGS_DEBUG_INIT "-O0 -g2 -mretain-list-vector")
-+# set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT CMAKE_CXX_FLAGS_RELEASE_INIT)
- 
- # UnixPaths.cmake adds these host-only locations:
- #  get_filename_component(_CMAKE_INSTALL_DIR ${_CMAKE_INSTALL_DIR} PATH )

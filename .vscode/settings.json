@@ -1,0 +1,12 @@
+{
+    
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+   "cmake.configureSettings": {
+      "SD_AURORA": true,
+//       "CMAKE_BUILD_TYPE":"Debug",
+//       "CMAKE_VERBOSE_MAKEFILE":"ON"
+"CMAKE_TOOLCHAIN_FILE":"${workspaceFolder}/cmake/aurora.cmake"
+
+   }
+}

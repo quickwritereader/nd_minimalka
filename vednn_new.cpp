@@ -17,6 +17,7 @@ using namespace std;
 #include <vector>
 #include <stdio.h>
 #include <dnnl.hpp>
+#include <exception>
 
 using namespace sd;
 
@@ -342,9 +343,14 @@ int main()
     fill_nd<float>(weights, FILL_MODE::INC);
 
 	input.printIndexedBuffer("input");
-
+    try{
     conv2d(&input, &weights, nullptr, &out, c);
-out.printIndexedBuffer("out");
+
+
+    out.printIndexedBuffer("out");
+    }catch(std::exception &ex){
+      std::cout<<ex.what()<<std::endl;
+    }
 	int fg;
  
 	std::cin >> fg;

@@ -3,8 +3,8 @@
 #
 cmake_minimum_required (VERSION 3.15)
 
-option(AURORA_BUILD "AURORA_BUILD")
-option(USE_ARMCOMPUTE "AURORA_BUILD")
+option(SD_AURORA "SD_AURORA")
+option(USE_ARMCOMPUTE "USE_ARMCOMPUTE")
 set(VERSION_TXT 0.01)
 project ("minimal_nd"  VERSION ${VERSION_TXT} LANGUAGES C CXX)
 
@@ -19,19 +19,28 @@ list(APPEND EXTRAS ${CMAKE_CURRENT_SOURCE_DIR}/Threads.cpp)
 set(CMAKE_MODULE_PATH  "${CMAKE_SOURCE_DIR}/cmake/")
 
 SET(CMAKE_CXX_FLAGS  "-fopenmp")
-if (AURORA_BUILD)
+if (SD_AURORA)
     message("Aurora build in process") 
-    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -finline-functions  -fdiag-inline=2 -fdiag-parallel=2 -fdiag-vector=2 -DSD_AURORA_BUILD=true")
-    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -DSD_AURORA_BUILD=true")
-endif(AURORA_BUILD)
+    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -finline-functions  -fdiag-inline=2 -fdiag-parallel=2 -fdiag-vector=2 -DSD_SD_AURORA=true")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -DSD_AURORA=true")
+    if ( DEFINED ENV{NLC_ROOT})
+
+    else()
+    set(ENV{NLC_ROOT} "/opt/nec/ve/nlc/2.3.0")
+    message("-----------$ENV{NLC_ROOT}")
+    endif()
+endif(SD_AURORA)
 
 
 
 if(SD_NEW)
 
     
-    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 ")
-    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g3")
+    #set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 ")
+    set(CMAKE_CXX_FLAGS_DEBUG  " -O0 -g") #-g3")
+    set(CMAKE_C_FLAGS  " -O0 -g") #-g3")
+    set(CMAKE_C_FLAGS_DEBUG  " -O0 -g") #-g3")
+    set(CMAKE_C_FLAGS_RELEASE  " -O0 -g") #-g3")
     message("Adds Vednn into dependency projects using ExternalProject_Add")
     set(HAVE_VEDNN 1)
     include(ExternalProject)
@@ -44,7 +53,7 @@ if(SD_NEW)
         "${VEDNN_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}dnnl${CMAKE_STATIC_LIBRARY_SUFFIX}")
     message(${VEDNN_STATIC_LIB})
     if(SD_AURORA)
-        set (BASH_CMD_VE  bash build.sh -aq$<$<CONFIG:Debug>:dddd>)
+        set (BASH_CMD_VE  bash build.sh -aq$<$<CONFIG:Debug>:d>)
     else()
         set (BASH_CMD_VE  bash build.sh -vjq$<$<CONFIG:Debug>:dddd>)
     endif()
