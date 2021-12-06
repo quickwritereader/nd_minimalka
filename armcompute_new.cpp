@@ -19,12 +19,12 @@ using namespace sd;
 
 #define CHECK_CORRECTNESS 1
 
-int bnch_cases[][8] = { 
-	 {1,1,31,49,49,31, 0,0},
-	 {1,1,49,31,49,31, 1,0},
-	 {1,1,31,31,49,31, 1,1},
-	 {1,1,24,31,49,31, 0,1},
-	  
+int bnch_cases[][8] = {
+     {1,1,31,49,49,31, 0,0},
+     {1,1,49,31,49,31, 1,0},
+     {1,1,31,31,49,31, 1,1},
+     {1,1,24,31,49,31, 0,1},
+
 };
 
 
@@ -122,16 +122,16 @@ static inline void getSizesAndIndexesConv2d(const bool isNCHW, const int wFormat
 }
 
 
- 
+
 
 bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
-    , int pW, int dH, int dW, int paddingMode, int isNHWC=0) {
-      
+    , int pW, int dH, int dW, int paddingMode, int isNHWC = 0) {
+
     bool isNCHW = !isNHWC;
     nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d", kH, kW, sH, sW, pH
         , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
-    input->printShapeInfo("input");
-    output->printShapeInfo("output");
+    internal_print_nd_shape(*input,"input");
+    internal_print_nd_shape(*output,"output");
 
 
     arm_compute::NEPoolingLayer pool;
@@ -139,14 +139,14 @@ bool pool2d(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int
     auto poolPad = arm_compute::PadStrideInfo(sW, sH, pW, pH, arm_compute::DimensionRoundingType::CEIL);
     auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), data_layout, poolPad);
     nd4j_printf("-------maxPool---%d--\n", 0);
-    auto in = getArmTensor(*input, data_layout); 
-    auto out = getArmTensor(*output, data_layout); 
+    auto in = getArmTensor(*input, data_layout);
+    auto out = getArmTensor(*output, data_layout);
 
- 
+
     pool.configure(&in, &out, maxPool);
-    print_tensor(in, "In");
+    internal_print_arm_array(in, "In");
     pool.run(); // run function
-    print_tensor(out, "After Run: Out");
+    internal_print_arm_array(out, "After Run: Out");
     return true;
 }
 
@@ -158,29 +158,29 @@ bool pool2d_b(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, i
     bool isNCHW = !isNHWC;
     nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d", kH, kW, sH, sW, pH
         , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
-    input->printShapeInfo("input");
+    internal_print_nd_shape(*input,"input");
 
 
     auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
-    auto inInfo  = getArmTensorInfo(*input, dataLayout);
+    auto inInfo = getArmTensorInfo(*input, dataLayout);
     auto outInfo = getArmTensorInfo(*output, dataLayout);
 
-    Arm_Tensor in{}; 
-    Arm_Tensor out{}; 
+    Arm_Tensor in{};
+    Arm_Tensor out{};
     in.allocator()->init(inInfo);
     out.allocator()->init(outInfo);
 
     arm_compute::NEPoolingLayer pool;
 
     auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), dataLayout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
-  
+
     pool.configure(&in, &out, maxPool);
 
     if (in.info()->has_padding()) {
         //allocate and copy
         in.allocator()->allocate();
         //copy 
-        copyToTensor(*input,in);
+        copyToTensor(*input, in);
 
     }
     else {
@@ -201,16 +201,16 @@ bool pool2d_b(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, i
     }
 
 
-    print_tensor(in, "In");
+    internal_print_arm_array(in, "In");
     pool.run(); // run function
-    print_tensor(out, "After Run: Out");
+    internal_print_arm_array(out, "After Run: Out");
     if (copyOut) {
         //copy the result
         copyFromTensor(out, *output);
 
     }
-    output->printShapeInfo("output");
-    output->printIndexedBuffer("output");
+    internal_print_nd_shape(*output,"output");
+    internal_print_nd_array(*output,"output");
     return true;
 }
 
@@ -224,21 +224,21 @@ bool pool2d_c(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, i
     bool isNCHW = !isNHWC;
     nd4j_printf(" kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d", kH, kW, sH, sW, pH
         , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
-    input->printShapeInfo("input");
-    input->printIndexedBuffer("input");
+    internal_print_nd_shape(*input,"input");
+    internal_print_nd_array(*input,"input");
 
     auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
-     
+
     ArmFunction<arm_compute::NEPoolingLayer> pool;
 
     auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), dataLayout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
 
-    pool.configure(input,output, dataLayout, maxPool);
-     
+    pool.configure(input, output, dataLayout, maxPool);
+
     pool.run(); // run function
-  
-    output->printShapeInfo("output");
-    output->printIndexedBuffer("output");
+
+    internal_print_nd_shape(*output,"output");
+    internal_print_nd_array(*output,"output");
     return true;
 }
 
@@ -261,16 +261,16 @@ bool pool2d_auto_tensor(int iW, int iH, int oW, int  oH, int iD, int bS, int kH,
     auto maxPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::MAX, arm_compute::Size2D(kW, kH), data_layout, arm_compute::PadStrideInfo(sW, sH, pW, pH));
     nd4j_printf("-------maxPool---%d--\n", 0);
 
- 
+
     pool.configure(&in, &out, maxPool);
 
     in.allocator()->allocate();
     out.allocator()->allocate();
-     
 
-    print_tensor(in, "tensor In");
+
+    internal_print_arm_array(in, "tensor In");
     pool.run(); // run function
-    print_tensor(out, "tensor: Out");
+    internal_print_arm_array(out, "tensor: Out");
 
 
     return true;
@@ -298,10 +298,10 @@ void test0() {
     const int oH = (iH - kH - (kH - 1) * (dH - 1) + 2 * pH) / sH + 1;     // output height
     const int oW = (iW - kW - (kW - 1) * (dW - 1) + 2 * pW) / sW + 1;     // output width
 
- 
+
 
     pool2d_auto_tensor(iW, iH, oW, oH, iD, bS, kH, kW, sH, sW, pH, pW);
- 
+
 }
 
 void test1() {
@@ -320,7 +320,7 @@ void test1() {
     const int oH = (iH - kH - (kH - 1) * (dH - 1) + 2 * pH) / sH + 1;     // output height
     const int oW = (iW - kW - (kW - 1) * (dW - 1) + 2 * pW) / sW + 1;     // output width
 
- 
+
     auto x = NDArrayFactory::create<float>('c', { bS,iD,iH,iW });
     auto exp = NDArrayFactory::create<float>('c', { bS,iD,oH,oW });
     auto out = NDArrayFactory::create<float>('c', { bS,iD,oH,oW });
@@ -332,26 +332,26 @@ void test1() {
     pool2d_c(&x, &out, kH, kW, sH, sW, pH, pW, dH, dW, 0);
 }
 
-void test2(const NDArray &input) {
-	input.printIndexedBuffer("Nd input");
-    auto in = getArmTensor(input); 
-    
-    print_tensor(in, "In"); 
+void test2(const NDArray& input) {
+    input.printIndexedBuffer("Nd input");
+    auto in = getArmTensor(input);
+
+    internal_print_arm_array(in, "In");
 }
 
 void test_pool() {
     auto x = NDArrayFactory::create<float>('c', { 2,2, 4, 4 });
     //auto exp = NDArrayFactory::create<float>('c', { 2, 2, 2, 2 }, { 11.f,  12.f,  15.f,  16.f,  27.f,  28.f,  31.f,  32.f,  43.f,  44.f,  47.f,  48.f,  59.f,  60.f,  63.f, 64.f });
-    auto out = NDArrayFactory::create<float>('c', { 2, 2, 2, 2 } );
+    auto out = NDArrayFactory::create<float>('c', { 2, 2, 2, 2 });
 
 
     fill_nd<float>(x, FILL_MODE::INC);
-     
+
     pool2d(&x, &out, 2, 2, 2, 2, 0, 0, 1, 1, 0, 0);
-  
+
     //exp.printIndexedBuffer("Expected");
     out.printIndexedBuffer("out");
- 
+
 }
 
 void test_pool2() {
@@ -368,49 +368,12 @@ void test_pool2() {
 
     //exp.printIndexedBuffer("Expected");
     out.printIndexedBuffer("out");
-    
+
 
 }
 
 
 void pool2d_avg(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
-    , int pW, int dH, int dW, int paddingMode, int extraParam0, int isNHWC = 0) {
-
-    int isNCHW = isNHWC?0:1;
-    int bS, iC, iH, iW, oC, oH, oW;                              
-    int indIOioC, indIiH, indWoC, indWiC, indWkH, indOoH;    
-    getSizesAndIndexesConv2d(isNCHW, 0, *input, *output, bS, iC, iH, iW, oC, oH, oW, indIOioC, indIiH, indWiC, indWoC, indWkH, indOoH);
-
-    if (paddingMode)
-        calcPadding2D(pH, pW, oH, oW, iH, iW, kH, kW, sH, sW, dH, dW);
-
-    bool exclude_padding =   (extraParam0 == 0) ? true : false;
-
-    nd4j_printf("avgpool kH = %d, kW = %d, sH = %d, sW = %d  , pH = %d  , pW = %d, dH = %d, dW = %d, paddingMode = %d , isNCHW %d exclude pad %d \n", kH, kW, sH, sW, pH
-        , pW, dH, dW, paddingMode, isNCHW ? 1 : 0, exclude_padding ? 1 : 0);
-    nd4j_printf("avgpool oH %d ow %d \n", oH,oW);
-
-    auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
-
-    ArmFunction<arm_compute::NEPoolingLayer> pool;
-    auto poolPad = arm_compute::PadStrideInfo(sW, sH, pW, pH, arm_compute::DimensionRoundingType::CEIL);
-    auto avgPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::AVG, arm_compute::Size2D(kW, kH), dataLayout, poolPad, exclude_padding);
-
-#if 0
-    auto in= getArmTensor(*input, dataLayout);
-    print_tensor(in, "original imported in");
-
-#endif
-
-    pool.configure(input, output, dataLayout, avgPool);
-
-    pool.run(); // run function
-    nd4j_printf("------------avg armcompute---%d-----\n", 0);
-    return;
-}
-
-
-void pool2d_avg_auto(NDArray* input, NDArray* output, int kH, int kW, int sH, int sW, int pH
     , int pW, int dH, int dW, int paddingMode, int extraParam0, int isNHWC = 0) {
 
     int isNCHW = isNHWC ? 0 : 1;
@@ -429,10 +392,15 @@ void pool2d_avg_auto(NDArray* input, NDArray* output, int kH, int kW, int sH, in
 
     auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
 
-    ArmFunctionAutoPadded<arm_compute::NEPoolingLayer> pool;
+    ArmFunction<arm_compute::NEPoolingLayer> pool;
     auto poolPad = arm_compute::PadStrideInfo(sW, sH, pW, pH, arm_compute::DimensionRoundingType::CEIL);
     auto avgPool = arm_compute::PoolingLayerInfo(arm_compute::PoolingType::AVG, arm_compute::Size2D(kW, kH), dataLayout, poolPad, exclude_padding);
- 
+
+#if 0
+    auto in = getArmTensor(*input, dataLayout);
+    internal_print_arm_array(in, "original imported in");
+
+#endif
 
     pool.configure(input, output, dataLayout, avgPool);
 
@@ -440,6 +408,7 @@ void pool2d_avg_auto(NDArray* input, NDArray* output, int kH, int kW, int sH, in
     nd4j_printf("------------avg armcompute---%d-----\n", 0);
     return;
 }
+
 
 void test_pool_avg() {
 
@@ -452,32 +421,14 @@ void test_pool_avg() {
     x.printIndexedBuffer("x");
 
     //////////////////2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0
-    pool2d_avg (&x,&z,2, 2, 2, 2, 0, 0, 1, 1, 1, 0, 0 );
+    pool2d_avg(&x, &z, 2, 2, 2, 2, 0, 0, 1, 1, 1, 0, 0);
 
 
     z.printIndexedBuffer("z");
 
 }
 
-void test_pool_avg_autopadding() {
-    auto rank = 4;
-    int top, right, bottom, left;
-    std::tie(top, right, bottom, left) = getAutoPadding(rank);
-    auto x = NDArrayFactory::createWithPadding('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32, top, right, bottom, left);
-    auto z = NDArrayFactory::create<float>('c', { 2, 2, 3, 3 });
-    //, { 4.f, 6.f, 7.5f, 14.f, 16.f, 17.5f,  21.5f, 23.5f, 25.f, 29.f, 31.f, 32.5f, 39.f, 41.f, 42.5f, 46.5f, 48.5f, 50.f, 54.f, 56.f, 57.5f,  64.f, 66.f, 67.5f, 71.5f, 73.5f, 75.f, 79.f, 81.f, 82.5f, 89.f, 91.f, 92.5f,  96.5f, 98.5f, 100.f });
 
-    fill_nd<float>(x, FILL_MODE::INC);
-
-    x.printIndexedBuffer("x_auto");
-
-    //////////////////2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0
-    pool2d_avg_auto(&x, &z, 2, 2, 2, 2, 0, 0, 1, 1, 1, 0, 0);
-
-
-    z.printIndexedBuffer("z");
-
-}
 
 static std::vector<Nd4jLong> expectWeightsShape(const int wFormat, const int kH, const int kW, const int iC, const int oC) {
 
@@ -503,7 +454,7 @@ static std::vector<Nd4jLong> expectWeightsShape(const int wFormat, const int kD,
 
 
 void deconv2d(NDArray* input, NDArray* weights, NDArray* bias, NDArray* output, int kH, int kW, int sH, int sW, int pH
-    , int pW, int dH, int dW, int paddingMode, int isNHWC = 0, int wFormat = 0)  {
+    , int pW, int dH, int dW, int paddingMode, int isNHWC = 0, int wFormat = 0) {
 
     bool isNCHW = isNHWC == 0;
 
@@ -515,14 +466,14 @@ void deconv2d(NDArray* input, NDArray* weights, NDArray* bias, NDArray* output, 
     getSizesAndIndexesConv2d(isNCHW, wFormat, *input, *output, bS, iC, iH, iW, oC, oH, oW, indIOioC, indIiH, indWoC, indWiC, indWkH, indOoH);
 
     std::vector<Nd4jLong> expectedWeightsShape = expectWeightsShape(wFormat, kH, kW, oC, iC);
-    
-    weights->printShapeInfo("weights");
-    for(auto &xx: expectedWeightsShape)
-        nd4j_printf("%d ",(int)xx);
-    nd4j_printf("%s \n","");
+
+    internal_print_nd_shape(*weights,"weights");
+    for (auto& xx : expectedWeightsShape)
+        nd4j_printf("%d ", (int)xx);
+    nd4j_printf("%s \n", "");
     if (paddingMode) {
         //Note: we're intentionally swapping iH and oH, to calculated the padding for a"normal" conv (not deconv) forward pass
-         calcPadding2D(pH, pW, iH, iW, oH, oW, kH, kW, sH, sW, dH, dW);
+        calcPadding2D(pH, pW, iH, iW, oH, oW, kH, kW, sH, sW, dH, dW);
     }
     pad_left = pW;
     pad_top = pH;
@@ -537,7 +488,7 @@ void deconv2d(NDArray* input, NDArray* weights, NDArray* bias, NDArray* output, 
         , pW, dH, dW, paddingMode, isNCHW ? 1 : 0);
 #endif
 
- 
+
 
     auto dataLayout = isNCHW ? arm_compute::DataLayout::NCHW : arm_compute::DataLayout::NHWC;
     //check weight input datalayout match
@@ -595,7 +546,7 @@ void deconv2d(NDArray* input, NDArray* weights, NDArray* bias, NDArray* output, 
     deconv.run(); // run function 
 }
 
-void testdeconv2d() { 
+void testdeconv2d() {
 
     int bS = 2, oH = 4, oW = 4, oC = 5, iC = 10, kH = 2, kW = 2, sH = 1, sW = 1, pH = 0, pW = 0, dH = 1, dW = 1;
     int       iH = 3, iW = 3;
@@ -609,10 +560,10 @@ void testdeconv2d() {
     //auto bias = NDArrayFactory::create<float>('c', { oC } );
     auto output = NDArrayFactory::create<float>('c', { bS, oH, oW, oC });
 
-   // fill_nd<float>(bias, FILL_MODE::INC);
+    // fill_nd<float>(bias, FILL_MODE::INC);
     input = input.subarray({ NDIndex::all(), NDIndex::all(),NDIndex::all(), NDIndex::all(), NDIndex::point(0) });
     input.reshapei({ bS, iH, iW, iC }, 'c');
- 
+
     fill_nd<float>(weights, FILL_MODE::INC);
     fill_nd<float>(input, FILL_MODE::INC);
 
@@ -660,12 +611,12 @@ void pool2d_avg_universal(NDArray* input, NDArray* output, int kH, int kW, int s
 
 
 void test_pool_avg_uni(bool autoPadInput, bool autoPadOutput) {
-    auto rank = 4; 
-    auto x = autoPadInput ? NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32 ):
+    auto rank = 4;
+    auto x = autoPadInput ? NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32) :
         NDArrayFactory::create('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32);
-    auto z = autoPadOutput? NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 2, 3, 3 }, sd::DataType::FLOAT32 ):
+    auto z = autoPadOutput ? NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 2, 3, 3 }, sd::DataType::FLOAT32) :
         NDArrayFactory::create('c', { 2, 2, 3, 3 }, sd::DataType::FLOAT32);
- 
+
     fill_nd<float>(x, FILL_MODE::INC);
 
     x.printIndexedBuffer("x_auto");
@@ -678,88 +629,85 @@ void test_pool_avg_uni(bool autoPadInput, bool autoPadOutput) {
 
 }
 
-int main()
-{
-#if 0
-    Arm_Tensor tensor;
-    Arm_TensorInfo info;
-    info.init_auto_padding(Arm_TensorShape{ 5,5,2,2 }, 1, Arm_DataType::S8);
-    tensor.allocator()->init(info);
 
-    print_tensor(tensor, "tensor");
-
-
-    Arm_Tensor tensor2;
-    Arm_TensorInfo info2;
-    info2.init_auto_padding(Arm_TensorShape{ 2,2,1 ,1 }, 1, Arm_DataType::S8);
-    tensor2.allocator()->init(info2);
-
-    print_tensor(tensor2, "tensor");
-    auto rank = 4;
-    auto extra_pad_x = rank < 1 ? 0 : 32;
-    auto pad_x = rank < 1 ? 0 : 4;
-    auto pad_y = rank < 2 ? 0 : 4;
-     
-
-    auto auto01 = NDArrayFactory::createWithPadding('c', { 2,2,5,5 }, sd::DataType::FLOAT32, pad_y, pad_x + extra_pad_x, pad_y, pad_x);
-
-    auto01.printShapeInfo("auto01 shapeINfo strides");
-    auto auto02 = NDArrayFactory::createWithPadding('c', { 1,1,2,2 }, sd::DataType::FLOAT32, pad_y, pad_x + extra_pad_x, pad_y, pad_x);
-
-    auto02.printShapeInfo("auto02 shapeINfo strides");
-
-    auto nd = NDArrayFactory::create<float>('c', { 1,1,2,2 });
-    nd.printShapeInfo("nd shapeINfo strides");
-//#endif
-    test_pool_avg();
-
-
-    test_pool_avg_autopadding();
-#endif
-    auto z = NDArrayFactory::create('c', { 2,3,4 }, sd::DataType::UINT32);
+void testXX(bool input_padded, bool output_padded) {
     auto rank = 4;
     int top, right, bottom, left;
+    std::cout << "/////////////////////////////////" << std::endl;
+    std::cout << "/////////////////////////////////" << std::endl;
+    std::cout << "/////////////////////////////////" << std::endl;
     std::tie(top, right, bottom, left) = getAutoPadding(rank);
-    auto x = NDArrayFactory::createWithPadding('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32, top, right, bottom, left);
-    auto y = NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32);
-    x.printShapeInfo("x");
-    y.printShapeInfo("y");
-    std::tie(top, right, bottom, left) = getAutoPadding(3);
-     x = NDArrayFactory::createWithPadding('c', { 2, 5, 7 }, sd::DataType::FLOAT32, top, right, bottom, left);
-     y = NDArrayFactory::createWithAutoPaddedStrides('c', { 2, 5, 7 }, sd::DataType::FLOAT32);
-    x.printShapeInfo("x");
-    y.printShapeInfo("y");
-    std::tie(top, right, bottom, left) = getAutoPadding(2);
-    x = NDArrayFactory::createWithPadding('c', { 6, 7 }, sd::DataType::FLOAT32, top, right, bottom, left);
-    y = NDArrayFactory::createWithAutoPaddedStrides('c', { 6, 7 }, sd::DataType::FLOAT32);
-    x.printShapeInfo("x");
-    y.printShapeInfo("y");
-    std::tie(top, right, bottom, left) = getAutoPadding(1);
-    x = NDArrayFactory::createWithPadding('c', {  7 }, sd::DataType::FLOAT32, top, right, bottom, left);
-    y = NDArrayFactory::createWithAutoPaddedStrides('c', {  7 }, sd::DataType::FLOAT32);
-    x.printShapeInfo("x");
-    y.printShapeInfo("y");
 
-    std::cout << "~~~" << x.isStridesAutoPadded() << "~~~~~" << std::endl;
-    std::cout << "~~~" << y.isStridesAutoPadded() << "~~~~~" << std::endl;
-    Arm_Tensor t,t1,t2,t3;
-    Arm_TensorInfo info,info1,info2,info3;
-    info.init_auto_padding(Arm_TensorShape{ 5,5,2,2 }, 1, Arm_DataType::S8);
-    info1.init_auto_padding(Arm_TensorShape{ 7,5,2 }, 1, Arm_DataType::S8);
-    info2.init_auto_padding(Arm_TensorShape{ 7, 6 }, 1, Arm_DataType::S8);
-    info3.init_auto_padding(Arm_TensorShape{ 7}, 1, Arm_DataType::S8);
-    t.allocator()->init(info);
-    t1.allocator()->init(info1);
-    t2.allocator()->init(info2);
-    t3.allocator()->init(info3);
-    print_tensor(t, "tensor");
-    print_tensor(t1, "tensor1");
-    print_tensor(t2, "tensor2");
-    print_tensor(t3, "tensor3");
-   // testdeconv2d();
+    std::vector<Nd4jLong> input_paddings = { 0, 0, top + bottom, left + right } ;
+    std::vector<Nd4jLong> input_offsets = { 0, 0, left, top } ;
+    std::vector<Nd4jLong> output_paddings = { 0, 0, top + bottom, left + right } ;
+    std::vector<Nd4jLong> output_offsets = { 0, 0, left, top };
 
-    test_pool_avg_uni(false,false);
-    test_pool_avg_uni(true,false); 
-    test_pool_avg_uni(true, true);
-	return 0;
+    if (!input_padded) {
+        input_paddings.clear();
+        input_offsets.clear();
+    }
+    if (!output_padded) {
+        output_paddings.clear();
+        output_offsets.clear();
+    }
+
+
+    auto x = NDArrayFactory::create('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32, input_paddings, input_offsets );
+    auto z = NDArrayFactory::create( 'c', { 2, 2, 3, 3 }, sd::DataType::FLOAT32, output_paddings, output_offsets);
+    auto tret = getArmTensor(z);
+    internal_print_arm_array(tret, "z");
+    fill_nd<float>(x, FILL_MODE::INC);
+
+    x.printIndexedBuffer("x_auto");
+
+    //////////////////2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0
+    pool2d_avg_universal(&x, &z, 2, 2, 2, 2, 0, 0, 1, 1, 1, 0, 0);
+
+
+    z.printIndexedBuffer("z");
+}
+
+
+void test5(){
+
+    int top, right, bottom, left;
+    std::tie(top, right, bottom, left) = getAutoPadding(4);
+
+    auto input = NDArrayFactory::create('c', { 2, 5, 5, 2 }, DataTypeUtils::fromT<float>(), { 0, 0, top + bottom, left + right }, { 0, 0, top, left });
+   fill_nd<float>(input, FILL_MODE::INC);
+ 
+
+}
+
+int main()
+{
+    //
+    int top, right, bottom, left;
+    std::tie(top, right, bottom, left) = getAutoPadding(4);
+    //auto x = NDArrayFactory::create('c', { 2, 2, 5, 5 }, sd::DataType::FLOAT32, { 0,0,top + bottom,left + right }, { 0,0,left,top });
+
+    //internal_print_nd_shape(x,"x");
+
+    //auto tret = getArmTensor(x);
+
+    //Arm_Tensor t;
+    //Arm_TensorInfo info, info1, info2, info3;
+    //info.init_auto_padding(Arm_TensorShape{ 5,5,2,2 }, 1, Arm_DataType::F32);
+    //t.allocator()->init(info);
+    //t.allocator()->allocate();
+
+    //internal_print_arm_array(tret, "tret");
+    //internal_print_arm_array(t, "tensor");
+
+    //testXX(false,false);
+    //testXX(false, true);
+    //testXX(true, false);
+    //testXX(true, true);
+    //auto x = NDArrayFactory::create('c', { 2, 3, 3, 2 }, DataTypeUtils::fromT<float>(), { 0, 0, top + bottom, left + right }, { 0, 0, top + bottom, left + right });
+    //fill_nd<float>(x, FILL_MODE::INC);
+    //auto tret = getArmTensor(x);
+    //internal_print_arm_array(tret, "tret");
+    test5();
+    return 0;
 }

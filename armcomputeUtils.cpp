@@ -97,9 +97,9 @@ Arm_TensorInfo getArmTensorInfo(const sd::NDArray& arr,
   if (rank > arm_compute::MAX_DIMS) {
     throw std::runtime_error("the rank of the array is higher");
   }
-  if (arr.ordering() != 'c' || arrStrides[rank - 1] != 1) {
-    throw std::runtime_error(
-        "NDArray should be c order and its last stride should be 1");
+  if (arr.ordering() != 'c' /*|| arrStrides[rank - 1] != 1*/) {
+      throw std::runtime_error(
+          "NDArray should be c order ");// and its last stride should be 1");
   }
   // https://arm-software.github.io/ComputeLibrary/v20.05/_dimensions_8h_source.xhtml
   // note: underhood it is stored as std::array<T, num_max_dimensions> _id;
@@ -118,12 +118,13 @@ Arm_TensorInfo getArmTensorInfo(const sd::NDArray& arr,
   for (int i = rank; i < arm_compute::MAX_DIMS; i++) {
     shape[i] = 1;
   }
-  size_t total_size;
-  size_t size_ind = rank - 1;
-  total_size = shape[size_ind] * strides[size_ind];
-
+  //size_t total_size;
+  //size_t size_ind = rank - 1;
+  //total_size = shape[size_ind] * strides[size_ind];
+  auto total_size = arr.getDataBuffer()->getLenInBytes();
+  auto offset = arr.bufferOffset() * element_size;
   Arm_TensorInfo info;
-  info.init(shape, numChannels, dType, strides, 0, total_size);
+  info.init(shape, numChannels, dType, strides, offset, total_size);
   info.set_data_layout(layout);
 
   return info;
@@ -141,13 +142,22 @@ Arm_Tensor getArmTensor(const NDArray& arr, arm_compute::DataLayout layout) {
   auto info = getArmTensorInfo(arr, layout);
   Arm_Tensor tensor;
   tensor.allocator()->init(info);
-  void* buff = arr.getBuffer();
+
+  //get without offset
+  void* buff = arr.getDataBuffer()->primary();
+  std::cout << "+++" << buff << std::endl;
   tensor.allocator()->import_memory(buff);
   return tensor;
 }
 
+std::tuple<int, int, int, int> getAutoPadding(int rank) {
+    auto extra_pad_x = rank < 1 ? 0 : 32;
+    auto pad_x = rank < 1 ? 0 : 4;
+    auto pad_y = rank < 2 ? 0 : 4;
+    return std::tuple<int, int, int, int>{ pad_y, pad_x + extra_pad_x, pad_y, pad_x };
+}
+
 void copyFromTensor(const Arm_Tensor& inTensor, sd::NDArray& output) {
-    //only for C order
     //only for C order
     if (output.ordering() != 'c') return;
     Nd4jLong* shapeInfo = output.getShapeInfo();
@@ -176,11 +186,12 @@ void copyFromTensor(const Arm_Tensor& inTensor, sd::NDArray& output) {
     }
     else {
         Nd4jLong coords[MAX_RANK] = {};
+        auto copySize = width * element_size;
         arm_compute::execute_window_loop(window, [&](const arm_compute::Coordinates& id)
             {
                 auto src = tensor_it.ptr();
                 auto dest = outputBuffer + offset * element_size;
-                memcpy(dest, src, width * element_size);
+                memcpy(dest, src, copySize);
                 offset = sd::inc_coords(bases, strides, coords, offset, rank, 1);
             },
             tensor_it);
@@ -217,17 +228,19 @@ void copyToTensor(const sd::NDArray& input, Arm_Tensor& outTensor) {
  }
  else {
      Nd4jLong coords[MAX_RANK] = {};
+     auto copySize = width * element_size;
      arm_compute::execute_window_loop(window, [&](const arm_compute::Coordinates& id)
          {
              auto dest = tensor_it.ptr();
              auto src = inputBuffer + offset * element_size;
+             memcpy(dest, src, copySize);
              offset = sd::inc_coords(bases, strides, coords, offset, rank, 1);
          },
          tensor_it);
  }
 }
 
-#define ARM_COMPUTE_ASSERTS_ENABLED 1
+
 // armcompute should be built with debug option
 void print_tensor(Arm_ITensor& tensor, const char* msg) {
     auto info = tensor.info();
@@ -243,7 +256,7 @@ void print_tensor(Arm_ITensor& tensor, const char* msg) {
   }
   std::cout << "\npadding: l " << padding.left << ", r " << padding.right
             << ", t " << padding.top << ", b " << padding.bottom << std::endl;
-
+  std::cout << "\noffset_first_element_in_bytes : " << info->offset_first_element_in_bytes() << std::endl;;
 #ifdef ARM_COMPUTE_ASSERTS_ENABLED
   std::cout << msg << ":\n";
   tensor.print(std::cout);

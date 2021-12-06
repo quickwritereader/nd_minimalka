@@ -605,7 +605,37 @@ namespace sd {
              
         }
 
+
+        DataBuffer(const void* hostBuffer, const DataType dataType, const size_t lenInBytes, memory::Workspace* workspace) {
+
+            if (hostBuffer == nullptr)
+                throw std::runtime_error("DataBuffer constructor: can't be initialized with nullptr host buffer !");
+            if (lenInBytes == 0)
+                throw std::runtime_error("DataBuffer constructor: can't be initialized with zero length !");
+
+            _primaryBuffer = nullptr;
+            _specialBuffer = nullptr;
+            _lenInBytes = lenInBytes;
+            _dataType = dataType;
+            _workspace = workspace;
+
+
+            allocateBuffers();
+
+            copyBufferFromHost(hostBuffer, lenInBytes);
+        }
  
+
+        void copyBufferFromHost(const void* hostBuffer, size_t sizeToCopyinBytes = 0, const Nd4jLong offsetThis = 0, const Nd4jLong offsetHostBuffer = 0) {
+
+            if (sizeToCopyinBytes == 0)
+                sizeToCopyinBytes = getLenInBytes();
+            if (sizeToCopyinBytes == 0)
+                return;
+
+            if (hostBuffer != nullptr)
+                std::memcpy(static_cast<int8_t*>(_primaryBuffer) + offsetThis * DataTypeUtils::sizeOfElement(_dataType), static_cast<const int8_t*>(hostBuffer) + offsetHostBuffer * DataTypeUtils::sizeOfElement(_dataType), sizeToCopyinBytes);
+        }
 
         ////////////////////////////////////////////////////////////////////////
         DataBuffer(const size_t lenInBytes, const DataType dataType, memory::Workspace* workspace=nullptr, const bool allocBoth=false) {
@@ -728,7 +758,7 @@ namespace sd {
         void deletePrimary() {
 
             if (_isOwnerPrimary && _primaryBuffer != nullptr && getLenInBytes() != 0) {
-                auto p = reinterpret_cast<int8_t*>(_primaryBuffer);
+                auto p = static_cast<int8_t*>(_primaryBuffer);
                 RELEASE(p, _workspace);
                 _primaryBuffer = nullptr;
                 _isOwnerPrimary = false;
@@ -1265,6 +1295,9 @@ namespace sd {
             return ArrayOptions::dataType(this->_shapeInfo) == BOOL;
         }
 
+        bool hasPaddedBuffer() const {
+            return ArrayOptions::hasPaddedBuffer(this->_shapeInfo);
+        }
         //////////////////////////////////////////////////////////////////////////
         template<typename T>
         std::string toStringValue(T value) {
@@ -1741,7 +1774,6 @@ namespace sd {
                 _length = 0;
             else
                 _length = shape::length(_shapeInfo);
-
             _dataType = ArrayOptions::dataType(_shapeInfo);
         }
 
@@ -2139,10 +2171,17 @@ namespace sd {
             return _buffer->primary() != nullptr ? static_cast<int8_t*>(_buffer->primary()) + (_offset * sizeOfT()) : nullptr;
         }
 
+        void* buffer() const {
+
+            return _buffer->primary() != nullptr ? static_cast<int8_t*>(_buffer->primary()) + (_offset * sizeOfT()) : nullptr;
+        }
+
         //////////////////////////////////////////////////////////////////////////
         void* buffer() {
             return _buffer->primary() != nullptr ? static_cast<int8_t*>(_buffer->primary()) + (_offset * sizeOfT()) : nullptr;
         }
+
+
 
         ////////////////////////////////////////////////////////////////////////
         Nd4jLong* getShapeInfo() const {
@@ -2151,6 +2190,10 @@ namespace sd {
 
         //////////////////////////////////////////////////////////////////////////
         Nd4jLong* shapeInfo() {
+            return _shapeInfo;
+        }
+
+        Nd4jLong* shapeInfo() const {
             return _shapeInfo;
         }
 
@@ -2167,6 +2210,10 @@ namespace sd {
             return _offset;
         }
 
+
+        Nd4jLong bufferOffset() const {
+            return _offset;
+        }
         ////////////////////////////////////////////////////////////////////////
         Nd4jLong bufferOffset() {
             return _offset;
@@ -2270,6 +2317,17 @@ namespace sd {
         template <typename T>
         static NDArray create(char order, const std::vector<Nd4jLong>& shape, sd::memory::Workspace* = nullptr);
         static NDArray create(char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, sd::memory::Workspace* = nullptr);
+        
+        
+        static NDArray createWithStrides(const char order, const std::vector<Nd4jLong>& shape, const std::vector<Nd4jLong>& strides, sd::DataType dtype, sd::memory::Workspace* workspace = nullptr, size_t offset = 0);
+
+        static NDArray createWithAutoPaddedStrides(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, sd::memory::Workspace* workspace = nullptr);
+
+        static NDArray createWithPadding(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, int paddingTop, int paddingRight,int paddingBottom , int paddingLeft, sd::memory::Workspace* workspace = nullptr);
+        
+        static NDArray create(const ShapeDescriptor& shapeDescriptor,  sd::memory::Workspace* context = nullptr);
+
+        static NDArray  create(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dataType, const std::vector<Nd4jLong>& paddings, const std::vector<Nd4jLong>& paddingOffsets, sd::memory::Workspace* context= nullptr);
 
         template <typename T>
         static NDArray create(const std::vector<T>& values, sd::memory::Workspace* = nullptr);
@@ -2372,13 +2430,14 @@ namespace sd {
 
 
 #ifndef __JAVACPP_HACK__
-    
+
     ////////////////////////////////////////////////////////////////////////
     template <typename T>
     FORCEINLINE NDArray NDArrayFactory::create(const char order, const std::vector<Nd4jLong>& shape, const std::initializer_list<T>& data, sd::memory::Workspace* workspace) {
         std::vector<T> vec(data);
         return create<T>(order, shape, vec, workspace);
     }
+
 
 #endif
 
@@ -2398,8 +2457,8 @@ namespace sd {
         return res;
     }
 
-   
- 
+
+
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -2409,8 +2468,8 @@ namespace sd {
         return new NDArray(NDArrayFactory::create<T>(order, shape, data, workspace));
     }
 
- 
- 
+
+
     ////////////////////////////////////////////////////////////////////////
     template <typename T>
     FORCEINLINE NDArray NDArrayFactory::create(const char order, const std::initializer_list<Nd4jLong>& shape, sd::memory::Workspace* workspace) {
@@ -2437,6 +2496,88 @@ namespace sd {
         std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(descriptor.arrLength() * DataTypeUtils::sizeOfElement(dtype), dtype, workspace);
 
         NDArray result(buffer, descriptor, workspace);
+
+        buffer->setToZeroBuffers();
+
+        return result;
+    }
+
+    FORCEINLINE NDArray NDArrayFactory::createWithStrides(const char order, const std::vector<Nd4jLong>& shape, const std::vector<Nd4jLong>& strides, sd::DataType dtype, sd::memory::Workspace* workspace, size_t offset) {
+
+        if ((int)shape.size() > MAX_RANK)
+            throw std::invalid_argument("NDArrayFactory::create: rank of NDArray can't exceed 32");
+
+        ShapeDescriptor descriptor(dtype, order, shape, strides);
+
+        std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(descriptor.bufferLength() * DataTypeUtils::sizeOfElement(dtype), dtype, workspace);
+        nd4j_printf(" bufferlength %lld\n", descriptor.bufferLength());
+        NDArray result(buffer, descriptor, workspace, offset);
+
+        buffer->setToZeroBuffers();
+
+        return result;
+    }
+
+    FORCEINLINE NDArray NDArrayFactory::createWithPadding(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, int paddingTop, int paddingRight, int paddingBottom, int paddingLeft, sd::memory::Workspace* workspace) {
+        if ((int)shape.size() > MAX_RANK)
+            throw std::invalid_argument("NDArrayFactory::create: rank of NDArray can't exceed 32");
+
+        std::vector<Nd4jLong> strides;
+        int rank = shape.size();
+        strides.resize(rank);
+        Nd4jLong shape_0;
+        Nd4jLong shape_1;
+
+        if (order == 'c') {
+            shape_0 = shape[rank - 1];
+            shape_1 = rank > 1 ? shape[rank - 2] : 1;
+
+        }
+        else {
+            shape_0 = shape[0];
+            shape_1 = rank > 1 ? shape[1] : 1;
+        }
+        Nd4jLong stride_x = 1;
+        Nd4jLong stride_y = (paddingLeft + shape_0 + paddingRight) * stride_x;
+        Nd4jLong stride_z = (paddingTop + shape_1 + paddingBottom) * stride_y;
+        const size_t required_offset_first_element = paddingLeft * stride_x + paddingTop * stride_y;
+        if (order == 'c') {
+            strides[rank - 1] = stride_x;
+            if (rank > 1) strides[rank - 2] = stride_y;
+            if (rank > 2) strides[rank - 3] = stride_z;
+        }
+        else {
+            strides[0] = stride_x;
+            if (rank > 1) strides[1] = stride_y;
+            if (rank > 2) strides[2] = stride_z;
+        }
+        ShapeDescriptor descriptor(dtype, order, shape, strides);
+
+
+        size_t allocationSize = descriptor.bufferLength();
+        if (rank <= 2) allocationSize = stride_z;
+
+        std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(allocationSize * DataTypeUtils::sizeOfElement(dtype), dtype, workspace);
+        nd4j_printf("0, bufferlength %ld  , offset %zu\n", allocationSize, required_offset_first_element);
+        NDArray result(buffer, descriptor, workspace, required_offset_first_element);
+
+        buffer->setToZeroBuffers();
+
+        return result;
+    }
+
+    //createWithAutoPaddedStrides(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, sd::memory::Workspace* workspace = nullptr);
+
+    FORCEINLINE NDArray NDArrayFactory::createWithAutoPaddedStrides(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dtype, sd::memory::Workspace* workspace) {
+        if ((int)shape.size() > MAX_RANK)
+            throw std::invalid_argument("NDArrayFactory::create: rank of NDArray can't exceed 32");
+
+        auto descriptor = ShapeDescriptor::stridesAutoPaddedDescriptor(dtype, order, shape);
+        auto allocationSize = descriptor.bufferLength();
+        auto offset = descriptor.startOffset();
+        std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(allocationSize * DataTypeUtils::sizeOfElement(dtype), dtype, workspace);
+        nd4j_printf("1, bufferlength %lld  , offset %lld\n", allocationSize, offset);
+        NDArray result(buffer, descriptor, workspace, offset);
 
         buffer->setToZeroBuffers();
 
@@ -2477,6 +2618,57 @@ namespace sd {
         return res;
     }
 
+
+    FORCEINLINE NDArray NDArrayFactory::create(const ShapeDescriptor& shapeDescriptor, sd::memory::Workspace* context) {
+        auto status = shapeDescriptor.validate();
+        if (status != SHAPE_DESC_OK) {
+            nd4j_printf("NDArrayFactory::create: ShapeDescriptor status code [%lld]\n", status);
+            throw std::invalid_argument("NDArrayFactory::create: invalid ShapeDescriptor ");
+        }
+        Nd4jLong allocSize = shapeDescriptor.allocLength() * DataTypeUtils::sizeOfElement(shapeDescriptor.dataType());
+        std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(allocSize, shapeDescriptor.dataType(), context);
+        NDArray result(buffer, shapeDescriptor, context, 0);
+        //result.nullify();
+        return result;
+    }
+
+    //FORCEINLINE NDArray NDArrayFactory::create(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dataType, const std::vector<Nd4jLong>& paddings, const std::vector<Nd4jLong> &startOffset, sd::memory::Workspace* context) {
+    //    if ((int)shape.size() > MAX_RANK)
+    //        throw std::invalid_argument("NDArrayFactory::create: rank of NDArray can't exceed 32");
+
+    //    auto descriptor = ShapeDescriptor::paddedBufferDescriptor(dataType, order, shape, paddings);
+    //    return create(descriptor,startOffset, context);
+    //}
+
+
+    FORCEINLINE NDArray NDArrayFactory::create(const char order, const std::vector<Nd4jLong>& shape, sd::DataType dataType, const std::vector<Nd4jLong>& paddings, const std::vector<Nd4jLong>& paddingOffsets, sd::memory::Workspace* context) {
+        int rank = shape.size();
+        if (rank > MAX_RANK)
+            throw std::invalid_argument("NDArrayFactory::create: rank of NDArray can't exceed 32");
+
+        if (paddings.size() != rank) {
+            throw std::invalid_argument("NDArrayFactory::create: paddings size should match rank ");
+        }
+
+        auto shapeDescriptor = ShapeDescriptor::paddedBufferDescriptor(dataType, order, shape, paddings);
+
+        Nd4jLong allocSize = shapeDescriptor.fullAllocLength() * DataTypeUtils::sizeOfElement(shapeDescriptor.dataType());
+        std::shared_ptr<DataBuffer> buffer = std::make_shared<DataBuffer>(allocSize, shapeDescriptor.dataType(), context);
+        //lets check offsets
+        int check_size = paddingOffsets.size() < rank ? paddingOffsets.size() : rank;
+
+        for (int i = 0; i < check_size; i++) {
+            if (paddingOffsets[i] > paddings[i]) {
+                throw std::invalid_argument("NDArrayFactory::create: paddingOffsets numbers should not exceed corresponding paddings");
+            }
+        }
+
+        Nd4jLong offset = offset_from_coords(shapeDescriptor.strides().data(), paddingOffsets.data(), check_size);
+        std::cout << "===== " << shapeDescriptor.fullAllocLength() << "===" << offset << std::endl;
+        NDArray result(buffer, shapeDescriptor, context, offset);
+        //result.nullify();
+        return result;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     template <typename T>

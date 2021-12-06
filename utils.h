@@ -1,7 +1,8 @@
 #pragma once
 #include "NdArrayMinimal.h" 
 #include <LoopCoordsHelper.h>
-
+#include <iostream>
+#include <random>
 template<size_t outter_loops = 1, size_t inner_loops = 1,typename Op, typename... Args >
 void time_it(Op op, double totalFlops, Args&&... args) {
 	std::vector<double> values;
@@ -130,7 +131,7 @@ void fill_nd(sd::NDArray& arr,FILL_MODE mode=FILL_MODE::RANDOM) {
 	std::mt19937 gen(rd());
 	//for floats
 	std::uniform_real_distribution<T> dis((T)0.0, (T)1.9);
-	T* x = arr.bufferAsT<T>();
+	T* x = (T*)arr.buffer();;
 	Nd4jLong* shapeInfo = arr.getShapeInfo();
 	Nd4jLong* strides = arr.stridesOf();
 	Nd4jLong rank = shapeInfo[0];
@@ -206,4 +207,11 @@ bool check_eq(sd::NDArray& arr, sd::NDArray& arr2,T abs_err=(T)0.0001) {
 			}
 			fprintf(stdout, "max difference %.9g \n", max_diff);
 	return max_diff>abs_err;
+}
+
+
+inline std::ostream& operator<<(std::ostream& os, const sd::NDArray& x) {
+	x.printShapeInfo("");
+	x.printIndexedBuffer("");
+	return os;
 }

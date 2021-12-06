@@ -112,22 +112,22 @@ namespace sd {
 		coords[rank - 1] = index;      // last iteration
 	}
 
-	FORCEINLINE size_t offset_from_coords(const Nd4jLong* strides, const Nd4jLong* coords, const  Nd4jLong& rank) {
+	//FORCEINLINE size_t offset_from_coords(const Nd4jLong* strides, const Nd4jLong* coords, const  Nd4jLong& rank) {
 
-		size_t offset = 0;
-		size_t rank_4 = rank & -4;
-		for (int i = 0; i < rank_4; i += 4) {
-			offset = offset
-				+ coords[i] * strides[i]
-				+ coords[i + 1] * strides[i + 1]
-				+ coords[i + 2] * strides[i + 2]
-				+ coords[i + 3] * strides[i + 3];
-		}
-		for (int i = rank_4; i < rank; i++) {
-			offset += coords[i] * strides[i];
-		}
-		return offset;
-	}
+	//	size_t offset = 0;
+	//	size_t rank_4 = rank & -4;
+	//	for (int i = 0; i < rank_4; i += 4) {
+	//		offset = offset
+	//			+ coords[i] * strides[i]
+	//			+ coords[i + 1] * strides[i + 1]
+	//			+ coords[i + 2] * strides[i + 2]
+	//			+ coords[i + 3] * strides[i + 3];
+	//	}
+	//	for (int i = rank_4; i < rank; i++) {
+	//		offset += coords[i] * strides[i];
+	//	}
+	//	return offset;
+	//}
 
 
 	FORCEINLINE zip_size_t offset_from_coords(const Nd4jLong*& x_strides, const Nd4jLong*& z_strides, const Nd4jLong* coords, const Nd4jLong& rank) {

@@ -5,10 +5,13 @@ cmake_minimum_required (VERSION 3.8)
 
 option(AURORA_BUILD "AURORA_BUILD")
 option(USE_ARMCOMPUTE "AURORA_BUILD")
-
-project ("minimal_nd"  VERSION ${VERSION} LANGUAGES C CXX)
+set(VERSION_TXT 0.01)
+project ("minimal_nd"  VERSION ${VERSION_TXT} LANGUAGES C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON) 
+set (CMAKE_CXX_STANDARD 14)
+
+option(SD_NEW  "new checks" ON)
 
 list(APPEND EXTRAS ${CMAKE_CURRENT_SOURCE_DIR}/Environment.cpp)
 list(APPEND EXTRAS ${CMAKE_CURRENT_SOURCE_DIR}/Threads.cpp) 
@@ -21,6 +24,57 @@ if (AURORA_BUILD)
     set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -finline-functions  -fdiag-inline=2 -fdiag-parallel=2 -fdiag-vector=2 -DSD_AURORA_BUILD=true")
     set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -DSD_AURORA_BUILD=true")
 endif(AURORA_BUILD)
+
+
+
+if(SD_NEW)
+
+    
+    set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 ")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g3")
+    message("Adds Vednn into dependency projects using ExternalProject_Add")
+    set(HAVE_VEDNN 1)
+    include(ExternalProject)
+    set(VEDNN_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/vednn-install")
+    set(VEDNN_STATIC_LIB
+        "${VEDNN_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}dnnl${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    if(SD_AURORA)
+        set (BASH_CMD_VE  bash build.sh -aq$<$<CONFIG:Debug>:dddd>)
+    else()
+        set (BASH_CMD_VE  bash build.sh -vjq$<$<CONFIG:Debug>:dddd>)
+    endif()
+    set(VEDNN_BUILD_COMMAND NLC_HOME=$ENV{NLC_ROOT} VEDNN_INSTALL_DIR=${VEDNN_PREFIX} ${BASH_CMD_VE})
+    set(VEDNN_PATCH_COMMAND "patch" "-Np0" < ${CMAKE_SOURCE_DIR}/vednn.patch "||" true)
+    ExternalProject_Add(vednn_project
+        GIT_REPOSITORY    https://github.com/necla-ml/gen-dnn
+        GIT_TAG           ve-v1.4
+        UPDATE_DISCONNECTED 1
+        SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/vednn-src"
+        PATCH_COMMAND     ${VEDNN_PATCH_COMMAND}
+        CONFIGURE_COMMAND ""
+        BUILD_IN_SOURCE   1
+        BUILD_COMMAND     ${VEDNN_BUILD_COMMAND}
+        BUILD_BYPRODUCTS  ${VEDNN_STATIC_LIB}
+        INSTALL_COMMAND ""
+        )
+ 
+    set(VEDNN_INCLUDE "${VEDNN_PREFIX}/include")
+    include_directories(${VEDNN_INCLUDE})
+    list(APPEND EXTERNAL_DEPENDENCY_PROJECTS vednn_project)
+    list(APPEND EXTERNAL_DEPENDENCY_LIBS ${VEDNN_STATIC_LIB} )
+
+    set(target_name "vednn_check")
+    add_executable (${target_name} "vednn_new.cpp"  ${EXTRAS}  )
+    target_include_directories(${target_name} PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ${ARMCOMPUTE_INCLUDE})
+    target_link_libraries(${target_name}  ${EXTERNAL_DEPENDENCY_LIBS} )
+    foreach(external_dependency ${EXTERNAL_DEPENDENCY_PROJECTS})
+        message("@external ${external_dependency}")
+        add_dependencies(${target_name} ${external_dependency})
+    endforeach()
+
+
+else(SD_NEW)
+
 
 if(USE_ARMCOMPUTE)
      find_package(ARMCOMPUTE REQUIRED)
@@ -35,14 +89,12 @@ if(USE_ARMCOMPUTE)
         include_directories(${ARMCOMPUTE_INCLUDE})
         message("----${ARMCOMPUTE_INCLUDE}---")
      endif()
+else(USE_ARMCOMPUTE)
+     set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2 -std=c++14 ")
+endif(USE_ARMCOMPUTE)
 
-else()
-     set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fopenmp -mavx2")
-endif()
 
-
-    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g")
-
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g3 -std=c++14")
  
 
 #add_executable (minimal_nd4 "main.cpp"  ${EXTRAS}   "user_codes4.cpp"  "reference.cpp")
@@ -58,7 +110,33 @@ endif()
 #add_executable (minimal_orig "main.cpp"  ${EXTRAS}   "original.cpp"  "reference.cpp")
 #target_include_directories(minimal_orig PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )
 
+if(USE_ARMCOMPUTE)
 
-add_executable (arm_examples "armcompute_main.cpp"  ${EXTRAS}    "armcomputeUtils.cpp" "armcomputeUtils.h")
-target_include_directories(arm_examples PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ${ARMCOMPUTE_INCLUDE})
-target_link_libraries(arm_examples  ${ARMCOMPUTE_LIBRARIES}  -latomic)
+
+
+#add_executable (arm_examples "armcompute_main.cpp"  ${EXTRAS}    "armcomputeUtils.cpp" "armcomputeUtils.h")
+#target_include_directories(arm_examples PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ${ARMCOMPUTE_INCLUDE})
+#target_link_libraries(arm_examples  ${ARMCOMPUTE_LIBRARIES}  -latomic)
+
+add_executable (arm_plus "armcompute_new.cpp"  ${EXTRAS}    "armcomputeUtils.cpp" "armcomputeUtils.h")
+target_include_directories(arm_plus PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ${ARMCOMPUTE_INCLUDE})
+target_link_libraries(arm_plus  ${ARMCOMPUTE_LIBRARIES}  -latomic)
+else(USE_ARMCOMPUTE)
+
+add_executable (minimal_ctc "ctc_loss.cpp"  ${EXTRAS}    "vednn_new.cpp")
+target_include_directories(minimal_ctc PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ) 
+
+add_executable (minimal_bm ${EXTRAS}   "beamsearch.cpp")
+target_include_directories(minimal_bm PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ) 
+add_executable (minimal_extra    "heap.cpp")
+target_include_directories(minimal_bm PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ) 
+
+add_executable (minimal_new    "new_additions.cpp")
+target_include_directories(minimal_new PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> ) 
+
+add_library (minimalbm SHARED ${EXTRAS}   "beamsearch.cpp")
+target_include_directories(minimalbm PUBLIC  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/> )  
+endif(USE_ARMCOMPUTE)
+ 
+
+endif(SD_NEW)
